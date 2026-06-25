@@ -1,0 +1,14 @@
+{
+  "name": "niem-cert-tracking-vercel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "node scripts/validate-env.js",
+    "start": "vercel dev"
+  },
+  "devDependencies": {
+    "vercel": "^50.28.0"
+  }
+}

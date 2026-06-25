@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <title>ระบบออกใบประกาศ | Certificate Search</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="public-shell">
+      <header class="site-header">
+        <a class="brand" href="/" aria-label="หน้าหลัก">
+          <span class="brand-mark">C</span>
+          <span>
+            <strong>ระบบออกใบประกาศ</strong>
+            <small>Certificate Search</small>
+          </span>
+        </a>
+        <a class="admin-link" href="/api/redirect?target=admin">สำหรับเจ้าหน้าที่</a>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>ค้นหาและตรวจสอบใบประกาศนียบัตร</h1>
+          <p>ค้นหาด้วยเลขที่ใบประกาศ ชื่อผู้รับ หรือชื่อหลักสูตร ระบบนี้รันหน้าเว็บบน Vercel และใช้ Google Apps Script เป็น backend สำหรับข้อมูลใบประกาศ</p>
+        </div>
+
+        <form class="search-panel" id="publicSearchForm">
+          <label for="publicSearchInput">คำค้นหา</label>
+          <div class="search-row">
+            <input id="publicSearchInput" name="query" type="search" placeholder="เช่น CERT-2569-0001 หรือชื่อ-นามสกุล" autocomplete="off" required>
+            <button type="submit">ค้นหา</button>
+          </div>
+          <p class="hint" id="configHint">กำลังตรวจสอบการเชื่อมต่อ backend...</p>
+        </form>
+      </section>
+
+      <section class="result-section" aria-live="polite">
+        <div class="section-heading">
+          <h2>ผลการค้นหา</h2>
+          <span id="resultCount">พร้อมค้นหา</span>
+        </div>
+        <div id="publicResults" class="result-list">
+          <article class="empty-state">
+            <strong>เริ่มค้นหาใบประกาศ</strong>
+            <span>พิมพ์เลขที่ใบประกาศ ชื่อผู้รับ หรือชื่อหลักสูตรในช่องค้นหาด้านบน</span>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="publicToast" role="status" aria-live="polite"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>
