@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <title>สร้างใบประกาศ | Certificate Creator</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="creator-shell">
+      <header class="site-header no-print">
+        <a class="brand" href="/" aria-label="หน้าหลัก">
+          <span class="brand-mark">C</span>
+          <span>
+            <strong>ระบบออกใบประกาศ</strong>
+            <small>Certificate Creator</small>
+          </span>
+        </a>
+        <div class="header-actions">
+          <button class="admin-link" id="printButton" type="button">พิมพ์ / Save PDF</button>
+          <a class="admin-link" href="/">ค้นหาใบประกาศ</a>
+        </div>
+      </header>
+
+      <section class="creator-layout">
+        <aside class="creator-panel no-print">
+          <div class="section-heading tight">
+            <h1>สร้างใบประกาศ</h1>
+            <span id="recordCount">0 รายการ</span>
+          </div>
+
+          <form id="certificateForm" class="certificate-form">
+            <label>
+              หน่วยงาน / องค์กร
+              <input name="organizationName" type="text" value="สถาบันการแพทย์ฉุกเฉินแห่งชาติ" required>
+            </label>
+
+            <label>
+              หัวข้อใบประกาศ
+              <input name="certificateTitle" type="text" value="ใบประกาศนียบัตร" required>
+            </label>
+
+            <label>
+              ชื่อผู้รับ
+              <input name="recipientName" type="text" placeholder="ชื่อ-นามสกุล" required>
+            </label>
+
+            <label>
+              หลักสูตร / กิจกรรม
+              <input name="courseName" type="text" placeholder="ชื่อหลักสูตรหรือกิจกรรม" required>
+            </label>
+
+            <div class="form-grid">
+              <label>
+                รหัสหลักสูตร
+                <input name="courseCode" type="text" value="NIEM">
+              </label>
+
+              <label>
+                ชั่วโมงอบรม
+                <input name="hours" type="number" min="0" step="1" value="6">
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label>
+                วันที่ออก
+                <input name="issueDate" type="date" required>
+              </label>
+
+              <label>
+                วันหมดอายุ
+                <input name="expireDate" type="date">
+              </label>
+            </div>
+
+            <label>
+              ผู้ลงนาม
+              <input name="signerName" type="text" placeholder="ชื่อผู้ลงนาม">
+            </label>
+
+            <label>
+              ตำแหน่งผู้ลงนาม
+              <input name="signerTitle" type="text" placeholder="ตำแหน่ง">
+            </label>
+
+            <label>
+              หมายเหตุ
+              <textarea name="note" rows="3" placeholder="รายละเอียดเพิ่มเติม"></textarea>
+            </label>
+
+            <div class="button-row">
+              <button class="primary-button" type="submit">สร้างใบประกาศ</button>
+              <button class="ghost-button" id="clearButton" type="button">ล้างฟอร์ม</button>
+            </div>
+          </form>
+
+          <section class="history-panel">
+            <div class="section-heading tight">
+              <h2>ประวัติ</h2>
+              <button class="link-button" id="clearHistoryButton" type="button">ล้างทั้งหมด</button>
+            </div>
+            <div id="historyList" class="history-list"></div>
+          </section>
+        </aside>
+
+        <section class="preview-panel">
+          <article class="certificate-page" id="certificatePreview" aria-live="polite">
+            <div class="certificate-border">
+              <div class="certificate-topline">
+                <span id="previewCertNo">CERT-NIEM-0001</span>
+                <span id="previewIssueDate">วันที่ออก -</span>
+              </div>
+
+              <div class="certificate-body">
+                <p class="certificate-org" id="previewOrganization">สถาบันการแพทย์ฉุกเฉินแห่งชาติ</p>
+                <h2 id="previewTitle">ใบประกาศนียบัตร</h2>
+                <p class="certificate-lead">ขอมอบใบประกาศฉบับนี้ให้แก่</p>
+                <h3 id="previewRecipient">ชื่อผู้รับใบประกาศ</h3>
+                <p class="certificate-copy">เพื่อแสดงว่าได้ผ่านการเข้าร่วม / สำเร็จหลักสูตร</p>
+                <h4 id="previewCourse">ชื่อหลักสูตรหรือกิจกรรม</h4>
+                <p class="certificate-meta" id="previewHours">จำนวน 6 ชั่วโมง</p>
+                <p class="certificate-note" id="previewNote"></p>
+              </div>
+
+              <div class="certificate-footer">
+                <div>
+                  <span>เลขที่ใบประกาศ</span>
+                  <strong id="previewCertNoFooter">CERT-NIEM-0001</strong>
+                </div>
+                <div class="signature-block">
+                  <div class="signature-line"></div>
+                  <strong id="previewSigner">ผู้ลงนาม</strong>
+                  <span id="previewSignerTitle">ตำแหน่ง</span>
+                </div>
+                <div>
+                  <span>วันหมดอายุ</span>
+                  <strong id="previewExpireDate">-</strong>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast no-print" id="publicToast" role="status" aria-live="polite"></div>
+    <script src="/creator.js"></script>
+  </body>
+</html>

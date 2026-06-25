@@ -5,6 +5,7 @@ This folder is a Vercel-ready gateway for the existing Google Apps Script system
 Vercel hosts:
 
 - Public certificate search UI
+- Local certificate creator at `/creator.html`
 - `/api/search` proxy to Apps Script
 - `/api/redirect` for admin and verify pages
 
@@ -68,3 +69,21 @@ npx vercel env add APPS_SCRIPT_WEB_APP_URL preview
 ```
 
 Then redeploy.
+
+## Certificate Creator
+
+Open:
+
+```text
+/creator.html
+```
+
+The creator page supports:
+
+- Certificate form
+- Live A4 landscape preview
+- Auto certificate number format: `CERT-COURSECODE-BEYEAR-0001`
+- Local history in the browser via `localStorage`
+- Print / Save as PDF using browser print
+
+This page is intentionally client-side only. It does not write to Google Sheets or Google Drive. Use the Apps Script admin system when records must be stored centrally and searchable by the public search page.
