@@ -90,8 +90,7 @@ The creator page supports:
 - Certificate form
 - Live A4 landscape preview
 - Logo image upload for the certificate
-- Digital signature image upload
-- Signer name and signer title fields
+- Multiple signers, each with signer name, signer title, and digital signature image
 - Auto certificate number format: `CERT-COURSECODE-BEYEAR-0001`
 - Per-course certificate running numbers
 - Bulk certificate creation from CSV recipient files

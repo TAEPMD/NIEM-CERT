@@ -495,6 +495,34 @@ a {
   grid-template-columns: 1fr 1fr;
 }
 
+.signers-panel {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #f8fbfd;
+  padding: 12px;
+}
+
+.signer-list {
+  display: grid;
+  gap: 10px;
+}
+
+.signer-item {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 12px;
+}
+
+.signer-item h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -826,6 +854,18 @@ a {
 .signature-block {
   min-width: 260px;
   text-align: center;
+}
+
+.signature-grid {
+  min-width: min(520px, 100%);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.signature-grid .signature-block {
+  min-width: 0;
 }
 
 .signature-image {

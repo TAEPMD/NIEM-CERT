@@ -268,6 +268,11 @@ function renewCertificate(recordId) {
     courseCode,
     issueDate,
     expireDate: course ? calculateExpireDate(issueDate, course) : '',
+    signers: record.signers || [{
+      name: record.signerName || '',
+      title: record.signerTitle || '',
+      signatureDataUrl: record.signatureDataUrl || ''
+    }],
     signerName: record.signerName || '',
     signerTitle: record.signerTitle || '',
     logoDataUrl: record.logoDataUrl || '',
