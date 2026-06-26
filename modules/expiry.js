@@ -8,7 +8,25 @@ import {
 
 export const EXPIRY_WARNING_DAYS = 30;
 
-export function calculateExpireDate(issueDate, validityDays) {
+export function getValidityDays(course) {
+  const value = Number(course && (course.validityValue || course.validityDays || 0));
+  const unit = String(course && (course.validityUnit || 'day'));
+  if (!value) return 0;
+  return unit === 'year' ? value * 365 : value;
+}
+
+export function formatValidity(course) {
+  const unit = String(course && (course.validityUnit || 'day'));
+  const value = course && course.validityValue
+    ? course.validityValue
+    : course && course.validityDays
+      ? course.validityDays
+      : '0';
+  return unit === 'year' ? `${value} ปี` : `${value} วัน`;
+}
+
+export function calculateExpireDate(issueDate, validity) {
+  const validityDays = typeof validity === 'object' ? getValidityDays(validity) : Number(validity || 0);
   if (!validityDays) return '';
   const date = issueDate ? parseDateInput(issueDate) : new Date();
   if (Number.isNaN(date.getTime())) return '';

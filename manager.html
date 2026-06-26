@@ -32,6 +32,7 @@
           </div>
 
           <form id="courseForm" class="course-form">
+            <input name="id" type="hidden">
             <div class="form-grid">
               <label>
                 รหัส
@@ -46,11 +47,23 @@
               ชื่อหลักสูตร
               <input name="name" type="text" placeholder="ชื่อหลักสูตรหรือกิจกรรม" required>
             </label>
-            <label>
-              อายุใบประกาศ (วัน)
-              <input name="validityDays" type="number" min="0" step="1" value="730">
-            </label>
-            <button class="ghost-button full" type="submit">เพิ่มหลักสูตร</button>
+            <div class="form-grid">
+              <label>
+                อายุใบประกาศ
+                <input name="validityValue" type="number" min="0" step="1" value="2">
+              </label>
+              <label>
+                หน่วย
+                <select name="validityUnit">
+                  <option value="year">ปี</option>
+                  <option value="day">วัน</option>
+                </select>
+              </label>
+            </div>
+            <div class="button-row">
+              <button class="ghost-button" id="courseSubmitButton" type="submit">เพิ่มหลักสูตร</button>
+              <button class="ghost-button" id="cancelCourseEditButton" type="button" hidden>ยกเลิก</button>
+            </div>
           </form>
 
           <div id="courseList" class="course-list"></div>
@@ -69,6 +82,29 @@
             <h1>ประวัติใบประกาศ</h1>
             <button class="link-button" id="clearHistoryButton" type="button">ล้างทั้งหมด</button>
           </div>
+          <form id="historyFilterForm" class="filter-form">
+            <label>
+              ค้นหา
+              <input name="keyword" type="search" placeholder="ชื่อผู้รับ เลขใบประกาศ หรือหลักสูตร">
+            </label>
+            <label>
+              หลักสูตร
+              <select name="courseCode" id="historyCourseFilter">
+                <option value="">ทุกหลักสูตร</option>
+              </select>
+            </label>
+            <label>
+              สถานะอายุ
+              <select name="expiryStatus">
+                <option value="">ทุกสถานะ</option>
+                <option value="expired">หมดอายุแล้ว</option>
+                <option value="warning">ใกล้หมดอายุ</option>
+                <option value="valid">ยังไม่หมดอายุ</option>
+                <option value="none">ไม่มีวันหมดอายุ</option>
+              </select>
+            </label>
+            <button class="ghost-button" id="clearFilterButton" type="button">ล้าง filter</button>
+          </form>
           <div id="historyList" class="history-list"></div>
         </section>
       </section>

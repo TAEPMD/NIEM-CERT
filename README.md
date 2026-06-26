@@ -104,9 +104,10 @@ Open after staff login:
 
 The management page supports:
 
-- Course master data: add/delete courses with code, name, hours, and certificate validity days
+- Course master data: add/edit/delete courses with code, name, hours, and certificate validity in days or years
 - Expiry tracking for expired certificates and certificates expiring within 30 days
-- Certificate history saved in this browser
+- Filterable certificate history saved in this browser
+- Renewal workflow: start a renewal from history, review the prepared draft on `/staff`, then issue a new certificate
 
 Staff page modules:
 

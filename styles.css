@@ -524,7 +524,10 @@ a {
   font-weight: 700;
 }
 
-.course-form input {
+.course-form input,
+.course-form select,
+.filter-form input,
+.filter-form select {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -533,6 +536,21 @@ a {
   background: #fff;
   outline: 0;
   font-weight: 500;
+}
+
+.filter-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(160px, 0.8fr) minmax(160px, 0.8fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.filter-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .full {
@@ -562,6 +580,14 @@ a {
   align-items: center;
 }
 
+.course-actions,
+.history-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 .course-item strong,
 .expiry-item strong {
   overflow-wrap: anywhere;
@@ -575,15 +601,24 @@ a {
   line-height: 1.45;
 }
 
-.delete-course-button {
+.delete-course-button,
+.edit-course-button {
   min-height: 34px;
-  border: 1px solid #f5c2c2;
   border-radius: var(--radius);
   background: #fff;
-  color: var(--red);
   padding: 0 10px;
   font-weight: 800;
   cursor: pointer;
+}
+
+.edit-course-button {
+  border: 1px solid var(--border);
+  color: var(--primary);
+}
+
+.delete-course-button {
+  border: 1px solid #f5c2c2;
+  color: var(--red);
 }
 
 .expiry-item.is-warning {
@@ -613,7 +648,6 @@ a {
   gap: 4px;
   text-align: left;
   color: var(--text);
-  cursor: pointer;
 }
 
 .history-item strong,
@@ -628,6 +662,10 @@ a {
 .history-item span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.renew-button {
+  min-height: 34px;
 }
 
 .certificate-page {
@@ -749,6 +787,10 @@ a {
 @media (max-width: 980px) {
   .creator-layout,
   .management-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-form {
     grid-template-columns: 1fr;
   }
 

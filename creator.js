@@ -14,6 +14,7 @@ import {
 import {
   loadRecords,
   persistRecords,
+  takeRenewalDraft,
   upsertRecord
 } from './modules/records.js';
 import {
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderCourseModule();
   applySelectedCourseDefaults(true);
+  loadRenewalDraftIfPresent();
 
   form.addEventListener('input', (event) => {
     if (event.target.name === 'issueDate' || event.target.name === 'courseId') {
@@ -134,6 +136,8 @@ function buildRecordFromForm(finalize) {
     signerName: clean(values.signerName) || 'ผู้ลงนาม',
     signerTitle: clean(values.signerTitle) || 'ตำแหน่ง',
     note: clean(values.note),
+    renewalOf: (creatorState.current && creatorState.current.renewalOf) || '',
+    previousCertificateNo: (creatorState.current && creatorState.current.previousCertificateNo) || '',
     createdAt: (creatorState.current && creatorState.current.createdAt) || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -184,7 +188,7 @@ function applySelectedCourseDefaults(forceExpireDate) {
   if (!course) return;
 
   if (forceExpireDate || !form.expireDate.value) {
-    form.expireDate.value = calculateExpireDate(form.issueDate.value, Number(course.validityDays || 0));
+    form.expireDate.value = calculateExpireDate(form.issueDate.value, course);
   }
 
   renderSelectedCourseSummary(course, getNextCertificateNo(course.code, form.issueDate.value));
@@ -208,4 +212,34 @@ function getNextCertificateNo(courseCode, issueDate) {
 
 function isSavedRecord(id) {
   return creatorState.records.some((record) => record.id === id);
+}
+
+function loadRenewalDraftIfPresent() {
+  const draft = takeRenewalDraft();
+  if (!draft) return;
+
+  const form = document.getElementById('certificateForm');
+  const course = getCourseById(creatorState.courses, draft.courseId) ||
+    creatorState.courses.find((item) => item.code === draft.courseCode);
+
+  form.organizationName.value = draft.organizationName || form.organizationName.value;
+  form.certificateTitle.value = draft.certificateTitle || form.certificateTitle.value;
+  form.recipientName.value = draft.recipientName || '';
+  if (course) form.courseId.value = course.id;
+  form.issueDate.value = draft.issueDate || formatDateInput(new Date());
+  form.expireDate.value = draft.expireDate || '';
+  form.signerName.value = draft.signerName || '';
+  form.signerTitle.value = draft.signerTitle || '';
+  form.note.value = draft.note || '';
+
+  creatorState.current = {
+    id: makeId(),
+    renewalOf: draft.renewalOf || '',
+    previousCertificateNo: draft.previousCertificateNo || ''
+  };
+  applySelectedCourseDefaults(!form.expireDate.value);
+  creatorState.current = Object.assign(creatorState.current, buildRecordFromForm(false));
+  renderPreview(creatorState.current);
+  renderCourseModule(form.courseId.value);
+  showToast('เตรียมข้อมูลต่ออายุแล้ว กรุณาตรวจสอบและกดสร้างใบประกาศ');
 }

@@ -1,4 +1,5 @@
 export const RECORD_STORAGE_KEY = 'niem_certificate_creator_records_v2';
+export const RENEWAL_DRAFT_STORAGE_KEY = 'niem_certificate_creator_renewal_draft_v1';
 
 export function loadRecords() {
   try {
@@ -31,4 +32,19 @@ export function upsertRecord(records, record) {
   }
 
   return nextRecords.slice(0, 500);
+}
+
+export function saveRenewalDraft(record) {
+  sessionStorage.setItem(RENEWAL_DRAFT_STORAGE_KEY, JSON.stringify(record));
+}
+
+export function takeRenewalDraft() {
+  try {
+    const draft = JSON.parse(sessionStorage.getItem(RENEWAL_DRAFT_STORAGE_KEY) || 'null');
+    sessionStorage.removeItem(RENEWAL_DRAFT_STORAGE_KEY);
+    return draft;
+  } catch (error) {
+    sessionStorage.removeItem(RENEWAL_DRAFT_STORAGE_KEY);
+    return null;
+  }
 }

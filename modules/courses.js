@@ -5,6 +5,10 @@ import {
   makeId,
   toThaiYear
 } from './utils.js';
+import {
+  formatValidity,
+  getValidityDays
+} from './expiry.js';
 
 export const COURSE_STORAGE_KEY = 'niem_certificate_creator_courses_v1';
 
@@ -14,6 +18,8 @@ export const defaultCourses = [
     code: 'NIEM',
     name: 'หลักสูตรมาตรฐานสถาบันการแพทย์ฉุกเฉิน',
     hours: '6',
+    validityValue: '2',
+    validityUnit: 'year',
     validityDays: '730'
   },
   {
@@ -21,6 +27,8 @@ export const defaultCourses = [
     code: 'BLS',
     name: 'Basic Life Support',
     hours: '8',
+    validityValue: '2',
+    validityUnit: 'year',
     validityDays: '730'
   }
 ];
@@ -43,23 +51,33 @@ export function buildCourseFromForm(form) {
   const values = Object.fromEntries(new FormData(form).entries());
   const code = normalizeCourseCode(values.code);
   if (!code) throw new Error('กรุณาระบุรหัสหลักสูตร');
+  const validityValue = clean(values.validityValue || values.validityDays);
+  const validityUnit = values.validityUnit === 'year' ? 'year' : 'day';
+  const validityDays = validityUnit === 'year'
+    ? String(Number(validityValue || 0) * 365)
+    : validityValue;
 
   return {
-    id: makeId(),
+    id: clean(values.id) || makeId(),
     code,
     name: clean(values.name) || code,
     hours: clean(values.hours),
-    validityDays: clean(values.validityDays)
+    validityValue,
+    validityUnit,
+    validityDays
   };
 }
 
 export function upsertCourse(courses, course) {
   const nextCourses = courses.map((item) => Object.assign({}, item));
-  const existing = nextCourses.find((item) => item.code === course.code);
+  const existing = nextCourses.find((item) => item.id === course.id || item.code === course.code);
 
   if (existing) {
+    existing.code = course.code;
     existing.name = course.name;
     existing.hours = course.hours;
+    existing.validityValue = course.validityValue;
+    existing.validityUnit = course.validityUnit;
     existing.validityDays = course.validityDays;
     return { courses: nextCourses, selectedCourseId: existing.id, updated: true };
   }
@@ -123,7 +141,7 @@ export function renderCourses(courses, records, selectedCourseId, onDeleteCourse
       <article class="course-item">
         <div>
           <strong>${escapeHtml(course.code)} - ${escapeHtml(course.name)}</strong>
-          <span>${escapeHtml(course.hours || '0')} ชั่วโมง · อายุใบประกาศ ${escapeHtml(course.validityDays || '0')} วัน${escapeHtml(usedLabel)}</span>
+          <span>${escapeHtml(course.hours || '0')} ชั่วโมง · อายุใบประกาศ ${escapeHtml(formatValidity(course))}${escapeHtml(usedLabel)}</span>
         </div>
         <button class="delete-course-button" type="button" data-course-id="${escapeAttr(course.id)}">ลบ</button>
       </article>
@@ -148,7 +166,7 @@ export function renderCourseSelector(courses, selectedCourseId) {
   select.value = activeCourseId || '';
 }
 
-export function renderCourseManager(courses, records, onDeleteCourse) {
+export function renderCourseManager(courses, records, onEditCourse, onDeleteCourse) {
   const list = document.getElementById('courseList');
 
   document.getElementById('courseCount').textContent = `${courses.length} รายการ`;
@@ -160,12 +178,19 @@ export function renderCourseManager(courses, records, onDeleteCourse) {
       <article class="course-item">
         <div>
           <strong>${escapeHtml(course.code)} - ${escapeHtml(course.name)}</strong>
-          <span>${escapeHtml(course.hours || '0')} ชั่วโมง · อายุใบประกาศ ${escapeHtml(course.validityDays || '0')} วัน${escapeHtml(usedLabel)}</span>
+          <span>${escapeHtml(course.hours || '0')} ชั่วโมง · อายุใบประกาศ ${escapeHtml(formatValidity(course))} (${getValidityDays(course)} วัน)${escapeHtml(usedLabel)}</span>
         </div>
-        <button class="delete-course-button" type="button" data-course-id="${escapeAttr(course.id)}">ลบ</button>
+        <div class="course-actions">
+          <button class="edit-course-button" type="button" data-course-id="${escapeAttr(course.id)}">แก้ไข</button>
+          <button class="delete-course-button" type="button" data-course-id="${escapeAttr(course.id)}">ลบ</button>
+        </div>
       </article>
     `;
   }).join('');
+
+  list.querySelectorAll('.edit-course-button').forEach((button) => {
+    button.addEventListener('click', () => onEditCourse(button.dataset.courseId));
+  });
 
   list.querySelectorAll('.delete-course-button').forEach((button) => {
     button.addEventListener('click', () => onDeleteCourse(button.dataset.courseId));
@@ -179,5 +204,5 @@ export function renderSelectedCourseSummary(course, nextCertificateNo) {
     return;
   }
 
-  summary.textContent = `รหัส ${course.code} · ${course.hours || 0} ชั่วโมง · อายุ ${course.validityDays || 0} วัน · เลขถัดไป ${nextCertificateNo}`;
+  summary.textContent = `รหัส ${course.code} · ${course.hours || 0} ชั่วโมง · อายุ ${formatValidity(course)} · เลขถัดไป ${nextCertificateNo}`;
 }
