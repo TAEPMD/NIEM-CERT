@@ -6,6 +6,7 @@ Vercel hosts:
 
 - Public certificate search UI
 - Protected staff certificate creator at `/staff`
+- Protected certificate management page at `/staff/manage`
 - `/api/search` proxy to Apps Script
 - `/api/redirect` for admin and verify pages
 
@@ -89,11 +90,23 @@ The creator page supports:
 - Certificate form
 - Live A4 landscape preview
 - Auto certificate number format: `CERT-COURSECODE-BEYEAR-0001`
-- Course master data: add/delete courses with code, name, hours, and certificate validity days
 - Per-course certificate running numbers
-- Expiry tracking for expired certificates and certificates expiring within 30 days
 - Local history in the browser via `localStorage`
 - Print / Save as PDF using browser print
+
+## Certificate Management
+
+Open after staff login:
+
+```text
+/staff/manage
+```
+
+The management page supports:
+
+- Course master data: add/delete courses with code, name, hours, and certificate validity days
+- Expiry tracking for expired certificates and certificates expiring within 30 days
+- Certificate history saved in this browser
 
 Staff page modules:
 

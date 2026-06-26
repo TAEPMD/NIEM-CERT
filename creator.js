@@ -1,35 +1,29 @@
 import {
-  buildCourseFromForm,
   defaultCourses,
-  getCourseByCode,
   getCourseById,
   getSelectedCourse,
   loadCourses,
   makeCertificateNo,
   normalizeCourseCode,
-  persistCourses,
-  removeCourse,
-  renderCourses,
-  renderSelectedCourseSummary,
-  upsertCourse
+  renderCourseSelector,
+  renderSelectedCourseSummary
 } from './modules/courses.js';
 import {
-  calculateExpireDate,
-  getExpiryState,
-  renderExpiryAlerts
+  calculateExpireDate
 } from './modules/expiry.js';
 import {
+  loadRecords,
+  persistRecords,
+  upsertRecord
+} from './modules/records.js';
+import {
   clean,
-  escapeAttr,
-  escapeHtml,
   formatDateInput,
   makeId,
   setText,
   showToast,
   toThaiDate
 } from './modules/utils.js';
-
-const RECORD_STORAGE_KEY = 'niem_certificate_creator_records_v2';
 
 const creatorState = {
   records: [],
@@ -39,7 +33,6 @@ const creatorState = {
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('certificateForm');
-  const courseForm = document.getElementById('courseForm');
 
   verifyStaffSession();
   creatorState.records = loadRecords();
@@ -71,31 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
     saveRecord(record);
     creatorState.current = record;
     renderPreview(record);
-    renderHistory();
-    renderExpiryAlerts(creatorState.records);
     renderCourseModule(record.courseId);
     showToast('สร้างใบประกาศเรียบร้อย');
-  });
-
-  courseForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    try {
-      const course = buildCourseFromForm(courseForm);
-      const result = upsertCourse(creatorState.courses, course);
-      creatorState.courses = result.courses;
-      persistCourses(creatorState.courses);
-
-      courseForm.reset();
-      courseForm.hours.value = '6';
-      courseForm.validityDays.value = '730';
-      renderCourseModule(result.selectedCourseId);
-      applySelectedCourseDefaults(true);
-      creatorState.current = buildRecordFromForm(false);
-      renderPreview(creatorState.current);
-      showToast(result.updated ? 'ปรับปรุงหลักสูตรเรียบร้อย' : 'เพิ่มหลักสูตรเรียบร้อย');
-    } catch (error) {
-      showToast(error.message || 'เพิ่มหลักสูตรไม่สำเร็จ');
-    }
   });
 
   document.getElementById('printButton').addEventListener('click', () => {
@@ -111,21 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
     resetCertificateForm();
   });
 
-  document.getElementById('clearHistoryButton').addEventListener('click', () => {
-    if (!creatorState.records.length) return;
-    if (!confirm('ยืนยันการล้างประวัติใบประกาศทั้งหมดในเครื่องนี้?')) return;
-    creatorState.records = [];
-    localStorage.removeItem(RECORD_STORAGE_KEY);
-    renderHistory();
-    renderExpiryAlerts(creatorState.records);
-    renderCourseModule();
-    showToast('ล้างประวัติแล้ว');
-  });
-
   creatorState.current = buildRecordFromForm(false);
   renderPreview(creatorState.current);
-  renderHistory();
-  renderExpiryAlerts(creatorState.records);
 });
 
 async function verifyStaffSession() {
@@ -183,52 +140,13 @@ function buildRecordFromForm(finalize) {
 }
 
 function saveRecord(record) {
-  const existingIndex = creatorState.records.findIndex((item) => item.id === record.id);
-  if (existingIndex >= 0) {
-    creatorState.records[existingIndex] = record;
-  } else {
-    creatorState.records.unshift(record);
-  }
-
-  creatorState.records = creatorState.records.slice(0, 500);
-  localStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(creatorState.records));
-}
-
-function loadRecords() {
-  try {
-    const modern = JSON.parse(localStorage.getItem(RECORD_STORAGE_KEY) || '[]');
-    if (Array.isArray(modern) && modern.length) return modern;
-
-    const legacy = JSON.parse(localStorage.getItem('niem_certificate_creator_records_v1') || '[]');
-    return Array.isArray(legacy) ? legacy : [];
-  } catch (error) {
-    return [];
-  }
+  creatorState.records = upsertRecord(creatorState.records, record);
+  persistRecords(creatorState.records);
 }
 
 function renderCourseModule(selectedCourseId) {
-  renderCourses(creatorState.courses, creatorState.records, selectedCourseId, deleteCourse);
+  renderCourseSelector(creatorState.courses, selectedCourseId);
   renderSelectedCourseSummary(getSelectedCourse(creatorState.courses), getNextCertificateNoForSelectedCourse());
-}
-
-function deleteCourse(courseId) {
-  const course = getCourseById(creatorState.courses, courseId);
-  if (!course) return;
-
-  const usedCount = creatorState.records.filter((record) => record.courseId === courseId || record.courseCode === course.code).length;
-  const message = usedCount
-    ? `หลักสูตรนี้ถูกใช้ในใบประกาศ ${usedCount} รายการ หากลบ ประวัติเดิมจะยังเก็บชื่อหลักสูตรไว้ ต้องการลบหรือไม่?`
-    : 'ยืนยันการลบหลักสูตรนี้?';
-
-  if (!confirm(message)) return;
-
-  creatorState.courses = removeCourse(creatorState.courses, courseId);
-  persistCourses(creatorState.courses);
-  renderCourseModule();
-  applySelectedCourseDefaults(true);
-  creatorState.current = buildRecordFromForm(false);
-  renderPreview(creatorState.current);
-  showToast('ลบหลักสูตรแล้ว');
 }
 
 function renderPreview(record) {
@@ -244,60 +162,6 @@ function renderPreview(record) {
   setText('previewSigner', record.signerName);
   setText('previewSignerTitle', record.signerTitle);
   setText('previewExpireDate', record.expireDate ? toThaiDate(record.expireDate) : '-');
-}
-
-function renderHistory() {
-  const list = document.getElementById('historyList');
-  document.getElementById('recordCount').textContent = `${creatorState.records.length} รายการ`;
-
-  if (!creatorState.records.length) {
-    list.innerHTML = `
-      <article class="empty-state">
-        <strong>ยังไม่มีประวัติ</strong>
-        <span>รายการที่สร้างจะถูกบันทึกไว้ใน browser เครื่องนี้</span>
-      </article>
-    `;
-    return;
-  }
-
-  list.innerHTML = creatorState.records.map((record) => {
-    const expiry = getExpiryState(record);
-    return `
-      <button class="history-item" type="button" data-id="${escapeAttr(record.id)}">
-        <strong>${escapeHtml(record.recipientName)}</strong>
-        <span>${escapeHtml(record.certificateNo)} · ${escapeHtml(record.courseCode)} · ${escapeHtml(record.courseName)}</span>
-        <span>${escapeHtml(expiry.label)}</span>
-      </button>
-    `;
-  }).join('');
-
-  list.querySelectorAll('.history-item').forEach((button) => {
-    button.addEventListener('click', () => {
-      const record = creatorState.records.find((item) => item.id === button.dataset.id);
-      if (!record) return;
-      loadRecordIntoForm(record);
-      creatorState.current = record;
-      renderPreview(record);
-      renderCourseModule(record.courseId);
-      showToast('โหลดรายการแล้ว');
-    });
-  });
-}
-
-function loadRecordIntoForm(record) {
-  const form = document.getElementById('certificateForm');
-  const course = getCourseById(creatorState.courses, record.courseId) || getCourseByCode(creatorState.courses, record.courseCode);
-
-  form.organizationName.value = record.organizationName || '';
-  form.certificateTitle.value = record.certificateTitle || '';
-  form.recipientName.value = record.recipientName || '';
-  if (course) form.courseId.value = course.id;
-  form.issueDate.value = record.issueDate || '';
-  form.expireDate.value = record.expireDate || '';
-  form.signerName.value = record.signerName || '';
-  form.signerTitle.value = record.signerTitle || '';
-  form.note.value = record.note || '';
-  renderSelectedCourseSummary(getSelectedCourse(creatorState.courses), getNextCertificateNoForSelectedCourse());
 }
 
 function resetCertificateForm() {

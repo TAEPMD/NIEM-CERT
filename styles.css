@@ -375,6 +375,17 @@ a {
   align-items: start;
 }
 
+.management-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.management-wide {
+  grid-column: 1 / -1;
+}
+
 .creator-panel,
 .preview-panel {
   background: var(--surface);
@@ -736,7 +747,8 @@ a {
 }
 
 @media (max-width: 980px) {
-  .creator-layout {
+  .creator-layout,
+  .management-layout {
     grid-template-columns: 1fr;
   }
 

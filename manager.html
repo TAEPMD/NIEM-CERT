@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <title>ระบบจัดการใบประกาศ | Certificate Manager</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="creator-shell">
+      <header class="site-header">
+        <a class="brand" href="/" aria-label="หน้าหลัก">
+          <span class="brand-mark">C</span>
+          <span>
+            <strong>ระบบจัดการใบประกาศ</strong>
+            <small>Certificate Manager</small>
+          </span>
+        </a>
+        <div class="header-actions">
+          <a class="admin-link" href="/staff">สร้างใบประกาศ</a>
+          <a class="admin-link" href="/">ค้นหาใบประกาศ</a>
+          <button class="admin-link" id="staffLogoutButton" type="button">ออกจากระบบ</button>
+        </div>
+      </header>
+
+      <section class="management-layout">
+        <section class="creator-panel">
+          <div class="section-heading tight">
+            <h1>หลักสูตร</h1>
+            <span id="courseCount">0 รายการ</span>
+          </div>
+
+          <form id="courseForm" class="course-form">
+            <div class="form-grid">
+              <label>
+                รหัส
+                <input name="code" type="text" placeholder="เช่น BLS" required>
+              </label>
+              <label>
+                ชั่วโมง
+                <input name="hours" type="number" min="0" step="1" value="6">
+              </label>
+            </div>
+            <label>
+              ชื่อหลักสูตร
+              <input name="name" type="text" placeholder="ชื่อหลักสูตรหรือกิจกรรม" required>
+            </label>
+            <label>
+              อายุใบประกาศ (วัน)
+              <input name="validityDays" type="number" min="0" step="1" value="730">
+            </label>
+            <button class="ghost-button full" type="submit">เพิ่มหลักสูตร</button>
+          </form>
+
+          <div id="courseList" class="course-list"></div>
+        </section>
+
+        <section class="creator-panel">
+          <div class="section-heading tight">
+            <h1>แจ้งเตือนหมดอายุ</h1>
+            <span id="expiryCount">0 รายการ</span>
+          </div>
+          <div id="expiryAlerts" class="expiry-list"></div>
+        </section>
+
+        <section class="creator-panel management-wide">
+          <div class="section-heading tight">
+            <h1>ประวัติใบประกาศ</h1>
+            <button class="link-button" id="clearHistoryButton" type="button">ล้างทั้งหมด</button>
+          </div>
+          <div id="historyList" class="history-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast" id="publicToast" role="status" aria-live="polite"></div>
+    <script type="module" src="/manager.js"></script>
+  </body>
+</html>

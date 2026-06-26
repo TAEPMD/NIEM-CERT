@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const errorBox = document.getElementById('loginError');
   const params = new URLSearchParams(window.location.search);
   const initialError = params.get('error');
+  const next = params.get('next') || '/staff';
 
   if (initialError) {
     errorBox.textContent = initialError;
@@ -23,7 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          password: document.getElementById('staffPassword').value
+          password: document.getElementById('staffPassword').value,
+          next
         })
       });
       const payload = await response.json();

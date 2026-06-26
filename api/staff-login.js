@@ -15,11 +15,19 @@ module.exports = async function handler(req, res) {
     }
 
     setSessionCookie(req, res, createSessionToken());
-    res.status(200).json({ ok: true, data: { redirectUrl: '/staff' } });
+    res.status(200).json({ ok: true, data: { redirectUrl: getSafeRedirectUrl(body.next) } });
   } catch (error) {
     res.status(500).json({ ok: false, message: error.message });
   }
 };
+
+function getSafeRedirectUrl(value) {
+  const next = String(value || '/staff');
+  if (next === '/staff' || next === '/staff/' || next === '/staff/manage' || next === '/staff/manage/') {
+    return next;
+  }
+  return '/staff';
+}
 
 function readJson(req) {
   return new Promise((resolve, reject) => {

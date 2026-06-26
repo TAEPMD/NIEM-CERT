@@ -4,6 +4,9 @@
   "functions": {
     "api/staff-page.js": {
       "includeFiles": "creator.html"
+    },
+    "api/staff-manager-page.js": {
+      "includeFiles": "manager.html"
     }
   },
   "rewrites": [
@@ -16,8 +19,20 @@
       "destination": "/api/staff-page"
     },
     {
+      "source": "/staff/manage",
+      "destination": "/api/staff-manager-page"
+    },
+    {
+      "source": "/staff/manage/",
+      "destination": "/api/staff-manager-page"
+    },
+    {
       "source": "/creator.html",
       "destination": "/api/staff-page"
+    },
+    {
+      "source": "/manager.html",
+      "destination": "/api/staff-manager-page"
     }
   ],
   "headers": [

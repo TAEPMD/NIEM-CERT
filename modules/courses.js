@@ -135,6 +135,43 @@ export function renderCourses(courses, records, selectedCourseId, onDeleteCourse
   });
 }
 
+export function renderCourseSelector(courses, selectedCourseId) {
+  const select = document.getElementById('courseSelect');
+  const requestedCourseId = selectedCourseId || select.value;
+  const activeCourseId = getCourseById(courses, requestedCourseId)
+    ? requestedCourseId
+    : (courses[0] && courses[0].id);
+
+  select.innerHTML = courses.map((course) => `
+    <option value="${escapeAttr(course.id)}">${escapeHtml(course.code)} - ${escapeHtml(course.name)}</option>
+  `).join('');
+  select.value = activeCourseId || '';
+}
+
+export function renderCourseManager(courses, records, onDeleteCourse) {
+  const list = document.getElementById('courseList');
+
+  document.getElementById('courseCount').textContent = `${courses.length} รายการ`;
+  list.innerHTML = courses.map((course) => {
+    const usedCount = records.filter((record) => record.courseId === course.id || record.courseCode === course.code).length;
+    const usedLabel = usedCount ? ` · ใช้แล้ว ${usedCount} ใบ` : '';
+
+    return `
+      <article class="course-item">
+        <div>
+          <strong>${escapeHtml(course.code)} - ${escapeHtml(course.name)}</strong>
+          <span>${escapeHtml(course.hours || '0')} ชั่วโมง · อายุใบประกาศ ${escapeHtml(course.validityDays || '0')} วัน${escapeHtml(usedLabel)}</span>
+        </div>
+        <button class="delete-course-button" type="button" data-course-id="${escapeAttr(course.id)}">ลบ</button>
+      </article>
+    `;
+  }).join('');
+
+  list.querySelectorAll('.delete-course-button').forEach((button) => {
+    button.addEventListener('click', () => onDeleteCourse(button.dataset.courseId));
+  });
+}
+
 export function renderSelectedCourseSummary(course, nextCertificateNo) {
   const summary = document.getElementById('selectedCourseSummary');
   if (!course) {
