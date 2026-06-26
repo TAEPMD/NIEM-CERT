@@ -171,7 +171,7 @@ async function logoutStaff() {
 function renderAll() {
   renderDashboard();
   renderCourseManager(managerState.courses, managerState.records, editCourse, deleteCourse);
-  renderExpiryAlerts(managerState.records);
+  renderExpiryAlerts(managerState.records, renewCertificate);
   renderHistoryCourseFilter();
   renderHistory();
 }
@@ -339,12 +339,33 @@ function renderHistory() {
   list.innerHTML = filteredRecords.map((record) => {
     const expiry = getExpiryState(record);
     const isArchived = record.archived === true;
+    const chain = buildRenewalChain(record);
+    const successor = getSuccessor(record.id);
+    const isRenewal = chain.length > 1;
+    const hasSuccessor = !!successor;
+
+    const archivedBadge = isArchived ? ' <span class="archived-badge">archived</span>' : '';
+    const supersededBadge = hasSuccessor ? ` <span class="renewed-badge">ถูกต่ออายุแล้ว</span>` : '';
+
+    let renewalChainHtml = '';
+    if (isRenewal) {
+      const original = chain[0];
+      const steps = chain.map((r, i) => {
+        if (i === 0) return `ออกครั้งแรก: ${escapeHtml(formatDisplayDate(r.issueDate))}`;
+        return `ต่ออายุครั้งที่ ${i}: ${escapeHtml(formatDisplayDate(r.issueDate))}`;
+      });
+      renewalChainHtml = `<div class="renewal-chain">${steps.join(' <span class="chain-sep">→</span> ')}</div>`;
+    } else if (hasSuccessor) {
+      renewalChainHtml = `<div class="renewal-chain">ถูกต่ออายุเป็นใบเลขที่ ${escapeHtml(successor.certificateNo)} เมื่อ ${escapeHtml(formatDisplayDate(successor.issueDate))}</div>`;
+    }
+
     return `
-      <article class="history-item${isArchived ? ' is-archived' : ''}" data-id="${escapeAttr(record.id)}">
-        <strong>${escapeHtml(record.recipientName)}${isArchived ? ' <span class="archived-badge">archived</span>' : ''}</strong>
+      <article class="history-item${isArchived ? ' is-archived' : ''}${hasSuccessor ? ' is-superseded' : ''}" data-id="${escapeAttr(record.id)}">
+        <strong>${escapeHtml(record.recipientName)}${archivedBadge}${supersededBadge}</strong>
         <span>${escapeHtml(record.certificateNo)} · ${escapeHtml(record.courseCode)} · ${escapeHtml(record.courseName)}</span>
         <span>ออกวันที่ ${escapeHtml(formatDisplayDate(record.issueDate))} · หมดอายุ ${escapeHtml(formatDisplayDate(record.expireDate))}</span>
         <span>${escapeHtml(expiry.label)}</span>
+        ${renewalChainHtml}
         <div class="history-actions">
           ${isArchived ? '' : `<button class="ghost-button renew-button" type="button" data-id="${escapeAttr(record.id)}">ต่ออายุ</button>`}
           <button class="edit-record-button" type="button" data-id="${escapeAttr(record.id)}">แก้ไข</button>
@@ -402,6 +423,25 @@ function archiveRecord(recordId) {
   persistRecords(managerState.records);
   renderAll();
   showToast(record.archived ? 'นำออกจาก archived แล้ว' : 'เก็บ archived แล้ว');
+}
+
+function buildRenewalChain(record) {
+  const chain = [];
+  let cur = record;
+  const visited = new Set();
+  while (cur && !visited.has(cur.id)) {
+    visited.add(cur.id);
+    chain.unshift(cur);
+    if (!cur.renewalOf) break;
+    const parent = managerState.records.find((r) => r.id === cur.renewalOf);
+    if (!parent) break;
+    cur = parent;
+  }
+  return chain;
+}
+
+function getSuccessor(recordId) {
+  return managerState.records.find((r) => r.renewalOf === recordId) || null;
 }
 
 function renewCertificate(recordId) {

@@ -55,8 +55,9 @@ export function getExpiryState(record) {
   return { kind: 'valid', daysLeft, label: `ยังไม่หมดอายุ เหลือ ${daysLeft} วัน` };
 }
 
-export function renderExpiryAlerts(records) {
-  const alerts = records
+export function renderExpiryAlerts(records, onRenew) {
+  const active = records.filter((r) => !r.archived);
+  const alerts = active
     .map((record) => ({ record, expiry: getExpiryState(record) }))
     .filter((item) => item.expiry.kind === 'expired' || item.expiry.kind === 'warning')
     .sort((a, b) => a.expiry.daysLeft - b.expiry.daysLeft);
@@ -76,9 +77,18 @@ export function renderExpiryAlerts(records) {
 
   container.innerHTML = alerts.map(({ record, expiry }) => `
     <article class="expiry-item is-${expiry.kind}">
-      <strong>${escapeHtml(record.recipientName)} · ${escapeHtml(record.certificateNo)}</strong>
-      <span>${escapeHtml(record.courseCode)} - ${escapeHtml(record.courseName)}</span>
-      <span>${escapeHtml(expiry.label)}</span>
+      <div class="expiry-info">
+        <strong>${escapeHtml(record.recipientName)} · ${escapeHtml(record.certificateNo)}</strong>
+        <span>${escapeHtml(record.courseCode)} - ${escapeHtml(record.courseName)}</span>
+        <span>${escapeHtml(expiry.label)}</span>
+      </div>
+      ${onRenew ? `<button class="expiry-renew-button" type="button" data-renew-id="${escapeHtml(record.id)}">ต่ออายุ</button>` : ''}
     </article>
   `).join('');
+
+  if (onRenew) {
+    container.querySelectorAll('.expiry-renew-button').forEach((button) => {
+      button.addEventListener('click', () => onRenew(button.dataset.renewId));
+    });
+  }
 }

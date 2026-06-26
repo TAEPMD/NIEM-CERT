@@ -796,6 +796,35 @@ a {
   color: var(--red);
 }
 
+.expiry-item {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.expiry-info {
+  display: grid;
+  gap: 3px;
+}
+
+.expiry-renew-button {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.expiry-renew-button:hover {
+  background: var(--primary-strong);
+  border-color: var(--primary-strong);
+}
+
 .expiry-item.is-warning {
   border-color: #f1c96d;
   background: #fffaf0;
@@ -873,6 +902,44 @@ a {
 .history-item.is-archived {
   opacity: 0.65;
   border-style: dashed;
+}
+
+.history-item.is-superseded {
+  opacity: 0.75;
+  border-color: #c9d8ea;
+  background: #f7fafd;
+}
+
+.renewal-chain {
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 5px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  line-height: 1.5;
+}
+
+.chain-sep {
+  color: #bcd0ea;
+  font-size: 10px;
+}
+
+.renewed-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  background: #dff0e8;
+  color: #2a7a4b;
+  border-radius: 4px;
+  padding: 1px 6px;
+  vertical-align: middle;
+  margin-left: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .archived-badge {
