@@ -22,6 +22,7 @@ import {
   escapeAttr,
   escapeHtml,
   formatDateInput,
+  parseDateInput,
   showToast
 } from './modules/utils.js';
 
@@ -31,7 +32,9 @@ const managerState = {
   filters: {
     keyword: '',
     courseCode: '',
-    expiryStatus: ''
+    expiryStatus: '',
+    issueFrom: '',
+    issueTo: ''
   }
 };
 
@@ -79,6 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHistory();
   });
 
+  document.getElementById('exportHistoryButton').addEventListener('click', exportFilteredHistory);
+
   document.getElementById('cancelCourseEditButton').addEventListener('click', () => {
     courseForm.reset();
     courseForm.elements.hours.value = '6';
@@ -125,10 +130,54 @@ async function logoutStaff() {
 }
 
 function renderAll() {
+  renderDashboard();
   renderCourseManager(managerState.courses, managerState.records, editCourse, deleteCourse);
   renderExpiryAlerts(managerState.records);
   renderHistoryCourseFilter();
   renderHistory();
+}
+
+function renderDashboard() {
+  const stats = getDashboardStats();
+  setText('totalCertificates', String(stats.total));
+  setText('validCertificates', String(stats.valid));
+  setText('warningCertificates', String(stats.warning));
+  setText('expiredCertificates', String(stats.expired));
+  setText('courseTotal', String(managerState.courses.length));
+  setText('latestIssuedAt', stats.latestIssuedAt ? `ออกล่าสุด ${stats.latestIssuedAt}` : 'ยังไม่มีข้อมูล');
+}
+
+function getDashboardStats() {
+  const stats = {
+    total: managerState.records.length,
+    valid: 0,
+    warning: 0,
+    expired: 0,
+    latestIssuedAt: ''
+  };
+  let latestIssueDate = null;
+
+  managerState.records.forEach((record) => {
+    const expiry = getExpiryState(record);
+    if (expiry.kind === 'valid') stats.valid += 1;
+    if (expiry.kind === 'warning') stats.warning += 1;
+    if (expiry.kind === 'expired') stats.expired += 1;
+
+    const issueDate = parseDateInput(record.issueDate);
+    if (!Number.isNaN(issueDate.getTime()) && (!latestIssueDate || issueDate > latestIssueDate)) {
+      latestIssueDate = issueDate;
+    }
+  });
+
+  if (latestIssueDate) {
+    stats.latestIssuedAt = latestIssueDate.toLocaleDateString('th-TH', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  return stats;
 }
 
 function editCourse(courseId) {
@@ -175,7 +224,9 @@ function updateFiltersFromForm(form) {
   managerState.filters = {
     keyword: String(values.keyword || '').trim().toLowerCase(),
     courseCode: String(values.courseCode || ''),
-    expiryStatus: String(values.expiryStatus || '')
+    expiryStatus: String(values.expiryStatus || ''),
+    issueFrom: String(values.issueFrom || ''),
+    issueTo: String(values.issueTo || '')
   };
 }
 
@@ -201,10 +252,19 @@ function getFilteredRecords() {
       record.courseName,
       record.note
     ].join(' ').toLowerCase();
+    const issueDate = parseDateInput(record.issueDate);
+    const issueFrom = managerState.filters.issueFrom ? parseDateInput(managerState.filters.issueFrom) : null;
+    const issueTo = managerState.filters.issueTo ? parseDateInput(managerState.filters.issueTo) : null;
 
     if (managerState.filters.keyword && !haystack.includes(managerState.filters.keyword)) return false;
     if (managerState.filters.courseCode && record.courseCode !== managerState.filters.courseCode) return false;
     if (managerState.filters.expiryStatus && expiry.kind !== managerState.filters.expiryStatus) return false;
+    if (issueFrom && !Number.isNaN(issueFrom.getTime())) {
+      if (Number.isNaN(issueDate.getTime()) || issueDate < issueFrom) return false;
+    }
+    if (issueTo && !Number.isNaN(issueTo.getTime())) {
+      if (Number.isNaN(issueDate.getTime()) || issueDate > issueTo) return false;
+    }
     return true;
   });
 }
@@ -212,6 +272,7 @@ function getFilteredRecords() {
 function renderHistory() {
   const list = document.getElementById('historyList');
   const filteredRecords = getFilteredRecords();
+  setText('historyResultCount', `${filteredRecords.length} / ${managerState.records.length} รายการ`);
 
   if (!managerState.records.length) {
     list.innerHTML = `
@@ -239,6 +300,7 @@ function renderHistory() {
       <article class="history-item" data-id="${escapeAttr(record.id)}">
         <strong>${escapeHtml(record.recipientName)}</strong>
         <span>${escapeHtml(record.certificateNo)} · ${escapeHtml(record.courseCode)} · ${escapeHtml(record.courseName)}</span>
+        <span>ออกวันที่ ${escapeHtml(formatDisplayDate(record.issueDate))} · หมดอายุ ${escapeHtml(formatDisplayDate(record.expireDate))}</span>
         <span>${escapeHtml(expiry.label)}</span>
         <div class="history-actions">
           <button class="ghost-button renew-button" type="button" data-id="${escapeAttr(record.id)}">ต่ออายุ</button>
@@ -286,4 +348,70 @@ function renewCertificate(recordId) {
 
   saveRenewalDraft(renewalDraft);
   window.location.href = '/staff?renew=1';
+}
+
+function exportFilteredHistory() {
+  const rows = getFilteredRecords();
+  if (!rows.length) {
+    showToast('ไม่มีข้อมูลสำหรับ export');
+    return;
+  }
+
+  const headers = [
+    'certificateNo',
+    'recipientName',
+    'courseCode',
+    'courseName',
+    'issueDate',
+    'expireDate',
+    'expiryStatus',
+    'note'
+  ];
+  const csvRows = [
+    headers.join(','),
+    ...rows.map((record) => {
+      const expiry = getExpiryState(record);
+      return [
+        record.certificateNo,
+        record.recipientName,
+        record.courseCode,
+        record.courseName,
+        record.issueDate,
+        record.expireDate,
+        expiry.kind,
+        record.note
+      ].map(csvCell).join(',');
+    })
+  ];
+
+  const blob = new Blob(['\uFEFF' + csvRows.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `certificate-history-${formatDateInput(new Date())}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast(`Export ${rows.length} รายการเรียบร้อย`);
+}
+
+function csvCell(value) {
+  return `"${String(value || '').replace(/"/g, '""')}"`;
+}
+
+function formatDisplayDate(value) {
+  if (!value) return '-';
+  const date = parseDateInput(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('th-TH', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+}
+
+function setText(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = value || '';
 }

@@ -24,6 +24,45 @@
         </div>
       </header>
 
+      <section class="manager-overview" aria-label="ภาพรวมระบบจัดการใบประกาศ">
+        <article class="metric-card">
+          <span>ใบประกาศทั้งหมด</span>
+          <strong id="totalCertificates">0</strong>
+          <small id="latestIssuedAt">ยังไม่มีข้อมูล</small>
+        </article>
+        <article class="metric-card is-valid">
+          <span>ยังใช้งานได้</span>
+          <strong id="validCertificates">0</strong>
+          <small>ไม่อยู่ในช่วงแจ้งเตือน</small>
+        </article>
+        <article class="metric-card is-warning">
+          <span>ใกล้หมดอายุ</span>
+          <strong id="warningCertificates">0</strong>
+          <small>ภายใน 30 วัน</small>
+        </article>
+        <article class="metric-card is-expired">
+          <span>หมดอายุแล้ว</span>
+          <strong id="expiredCertificates">0</strong>
+          <small>ควรต่ออายุหรือตรวจสอบ</small>
+        </article>
+        <article class="metric-card">
+          <span>หลักสูตร</span>
+          <strong id="courseTotal">0</strong>
+          <small>ใช้รันเลขแยกตามหลักสูตร</small>
+        </article>
+      </section>
+
+      <section class="manager-toolbar">
+        <div>
+          <strong>งานสำหรับเจ้าหน้าที่</strong>
+          <span>จัดการหลักสูตร ตรวจใบใกล้หมดอายุ ค้นประวัติ และต่ออายุใบประกาศ</span>
+        </div>
+        <div class="toolbar-actions">
+          <a class="primary-button" href="/staff">สร้างใบประกาศ</a>
+          <button class="ghost-button" id="exportHistoryButton" type="button">Export CSV</button>
+        </div>
+      </section>
+
       <section class="management-layout">
         <section class="creator-panel">
           <div class="section-heading tight">
@@ -80,7 +119,10 @@
         <section class="creator-panel management-wide">
           <div class="section-heading tight">
             <h1>ประวัติใบประกาศ</h1>
-            <button class="link-button" id="clearHistoryButton" type="button">ล้างทั้งหมด</button>
+            <div class="section-actions">
+              <span id="historyResultCount">0 รายการ</span>
+              <button class="link-button" id="clearHistoryButton" type="button">ล้างทั้งหมด</button>
+            </div>
           </div>
           <form id="historyFilterForm" class="filter-form">
             <label>
@@ -102,6 +144,14 @@
                 <option value="valid">ยังไม่หมดอายุ</option>
                 <option value="none">ไม่มีวันหมดอายุ</option>
               </select>
+            </label>
+            <label>
+              ออกตั้งแต่
+              <input name="issueFrom" type="date">
+            </label>
+            <label>
+              ถึงวันที่
+              <input name="issueTo" type="date">
             </label>
             <button class="ghost-button" id="clearFilterButton" type="button">ล้าง filter</button>
           </form>

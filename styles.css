@@ -382,6 +382,98 @@ a {
   align-items: start;
 }
 
+.manager-overview {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  display: grid;
+  gap: 4px;
+}
+
+.metric-card span,
+.metric-card small,
+.manager-toolbar span,
+.section-actions span {
+  color: var(--muted);
+}
+
+.metric-card span {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.metric-card strong {
+  color: var(--text);
+  font-size: 30px;
+  line-height: 1.05;
+}
+
+.metric-card small {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.metric-card.is-valid {
+  border-color: #b8dccd;
+  background: #f2fbf7;
+}
+
+.metric-card.is-warning {
+  border-color: #f1c96d;
+  background: #fffaf0;
+}
+
+.metric-card.is-expired {
+  border-color: #f5c2c2;
+  background: #fff0f0;
+}
+
+.manager-toolbar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.manager-toolbar > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.manager-toolbar strong {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.manager-toolbar span {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.toolbar-actions,
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .management-wide {
   grid-column: 1 / -1;
 }
@@ -561,6 +653,9 @@ a {
   border: 0;
   background: var(--primary);
   color: #fff;
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
 }
 
 .primary-button:disabled,
@@ -620,7 +715,7 @@ a {
 
 .filter-form {
   display: grid;
-  grid-template-columns: minmax(220px, 1.4fr) minmax(160px, 0.8fr) minmax(160px, 0.8fr) auto;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(150px, 0.8fr) minmax(150px, 0.8fr) minmax(145px, 0.7fr) minmax(145px, 0.7fr) auto;
   gap: 10px;
   align-items: end;
 }
@@ -967,12 +1062,44 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .manager-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .manager-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toolbar-actions {
+    justify-content: stretch;
+  }
+
+  .toolbar-actions > * {
+    flex: 1 1 180px;
+  }
+
   .filter-form {
     grid-template-columns: 1fr;
   }
 
   .preview-panel {
     padding: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .manager-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading.tight {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .section-actions {
+    justify-content: flex-start;
   }
 }
 
