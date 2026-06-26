@@ -223,7 +223,13 @@ function buildRecordFromForm(finalize) {
 }
 
 function saveRecord(record) {
-  creatorState.records = upsertRecord(creatorState.records, record);
+  let records = upsertRecord(creatorState.records, record);
+  if (record.renewalOf) {
+    records = records.map((r) =>
+      r.id === record.renewalOf ? { ...r, archived: true } : r
+    );
+  }
+  creatorState.records = records;
   persistRecords(creatorState.records);
 }
 
