@@ -5,7 +5,8 @@ This folder is a Vercel-ready gateway for the existing Google Apps Script system
 Vercel hosts:
 
 - Public certificate search UI
-- Protected staff certificate creator at `/staff`
+- Protected staff area at `/staff`
+- Certificate creation, certificate number running, renewal, bulk issuing, and certificate management under the staff area
 - Protected certificate management page at `/staff/manage`
 - `/api/search` proxy to Apps Script
 - `/api/redirect` for admin and verify pages
@@ -13,8 +14,7 @@ Vercel hosts:
 Google Apps Script remains the backend for:
 
 - Google Sheets data
-- Certificate creation
-- Admin login
+- Public certificate search and verification data
 - PDF/Drive integration
 
 ## Required Apps Script Change
