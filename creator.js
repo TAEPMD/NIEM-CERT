@@ -249,6 +249,9 @@ function refreshPreview(options) {
   clearBulkPrintPages();
   creatorState.current = buildRecordFromForm(false);
   renderPreview(creatorState.current);
+  if (creatorState.bulkRecipients.length) {
+    renderBulkPrintPages(buildBulkCertificateRecords(false), 'preview');
+  }
 }
 
 function renderPreview(record) {
@@ -386,6 +389,7 @@ function renderBulkPreview() {
 
   if (!count) {
     list.innerHTML = '';
+    clearBulkPrintPages();
     return;
   }
 
@@ -412,6 +416,16 @@ function applyBulkRecipientToForm(index) {
 function createBulkCertificates() {
   if (!creatorState.bulkRecipients.length) return;
 
+  const recordsToCreate = buildBulkCertificateRecords(true);
+  saveRecords(recordsToCreate);
+  creatorState.current = recordsToCreate[0];
+  renderPreview(creatorState.current);
+  renderBulkPrintPages(recordsToCreate, 'print');
+  renderCourseModule(creatorState.current.courseId);
+  showToast(`สร้างใบประกาศแบบ Bulk ${recordsToCreate.length} รายการเรียบร้อย`);
+}
+
+function buildBulkCertificateRecords(finalize) {
   const baseRecord = buildRecordFromForm(false);
   const recordsToCreate = [];
   let draftRecords = creatorState.records.slice();
@@ -422,7 +436,7 @@ function createBulkCertificates() {
       recipientName: recipient.recipientName,
       note: recipient.note || baseRecord.note,
       certificateNo: makeCertificateNo(draftRecords, null, baseRecord.courseCode, baseRecord.issueDate),
-      createdAt: new Date().toISOString(),
+      createdAt: finalize ? new Date().toISOString() : baseRecord.createdAt,
       updatedAt: new Date().toISOString(),
       renewalOf: '',
       previousCertificateNo: ''
@@ -431,12 +445,7 @@ function createBulkCertificates() {
     draftRecords.unshift(record);
   });
 
-  saveRecords(recordsToCreate);
-  creatorState.current = recordsToCreate[0];
-  renderPreview(creatorState.current);
-  renderBulkPrintPages(recordsToCreate);
-  renderCourseModule(creatorState.current.courseId);
-  showToast(`สร้างใบประกาศแบบ Bulk ${recordsToCreate.length} รายการเรียบร้อย`);
+  return recordsToCreate;
 }
 
 function downloadCsvTemplate() {
@@ -473,7 +482,7 @@ function escapeText(value) {
   })[char]);
 }
 
-function renderBulkPrintPages(records) {
+function renderBulkPrintPages(records, mode) {
   const container = document.getElementById('bulkPrintPages');
   container.innerHTML = records.map((record) => `
     <article class="certificate-page" style="${getCertificateStyleAttr(record.design)}">
@@ -507,12 +516,14 @@ function renderBulkPrintPages(records) {
       </div>
     </article>
   `).join('');
-  document.body.classList.add('has-bulk-print');
+  document.body.classList.toggle('has-bulk-print', mode === 'print');
+  document.body.classList.toggle('has-bulk-preview', mode !== 'print');
 }
 
 function clearBulkPrintPages() {
   document.getElementById('bulkPrintPages').innerHTML = '';
   document.body.classList.remove('has-bulk-print');
+  document.body.classList.remove('has-bulk-preview');
 }
 
 function renderSignerInputs() {

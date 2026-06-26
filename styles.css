@@ -769,6 +769,21 @@ a {
   display: none;
 }
 
+.has-bulk-preview #certificatePreview {
+  display: none;
+}
+
+.has-bulk-preview .bulk-print-pages {
+  display: grid;
+  gap: 18px;
+}
+
+.has-bulk-preview .bulk-print-pages .certificate-page {
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+}
+
 .certificate-border {
   height: 100%;
   border: 8px var(--cert-border-style) var(--cert-border-color);
@@ -952,15 +967,18 @@ a {
     page-break-after: avoid;
   }
 
-  .has-bulk-print #certificatePreview {
+  .has-bulk-print #certificatePreview,
+  .has-bulk-preview #certificatePreview {
     display: none;
   }
 
-  .has-bulk-print .bulk-print-pages {
+  .has-bulk-print .bulk-print-pages,
+  .has-bulk-preview .bulk-print-pages {
     display: block;
   }
 
-  .has-bulk-print .bulk-print-pages .certificate-page {
+  .has-bulk-print .bulk-print-pages .certificate-page,
+  .has-bulk-preview .bulk-print-pages .certificate-page {
     page-break-after: always;
   }
 }
