@@ -1,23 +1,35 @@
-const RECORD_STORAGE_KEY = 'niem_certificate_creator_records_v2';
-const COURSE_STORAGE_KEY = 'niem_certificate_creator_courses_v1';
-const EXPIRY_WARNING_DAYS = 30;
+import {
+  buildCourseFromForm,
+  defaultCourses,
+  getCourseByCode,
+  getCourseById,
+  getSelectedCourse,
+  loadCourses,
+  makeCertificateNo,
+  normalizeCourseCode,
+  persistCourses,
+  removeCourse,
+  renderCourses,
+  renderSelectedCourseSummary,
+  upsertCourse
+} from './modules/courses.js';
+import {
+  calculateExpireDate,
+  getExpiryState,
+  renderExpiryAlerts
+} from './modules/expiry.js';
+import {
+  clean,
+  escapeAttr,
+  escapeHtml,
+  formatDateInput,
+  makeId,
+  setText,
+  showToast,
+  toThaiDate
+} from './modules/utils.js';
 
-const defaultCourses = [
-  {
-    id: 'course_niem',
-    code: 'NIEM',
-    name: 'หลักสูตรมาตรฐานสถาบันการแพทย์ฉุกเฉิน',
-    hours: '6',
-    validityDays: '730'
-  },
-  {
-    id: 'course_bls',
-    code: 'BLS',
-    name: 'Basic Life Support',
-    hours: '8',
-    validityDays: '730'
-  }
-];
+const RECORD_STORAGE_KEY = 'niem_certificate_creator_records_v2';
 
 const creatorState = {
   records: [],
@@ -34,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
   creatorState.courses = loadCourses();
   form.issueDate.value = formatDateInput(new Date());
 
-  renderCourses();
+  renderCourseModule();
   applySelectedCourseDefaults(true);
 
   form.addEventListener('input', (event) => {
@@ -60,25 +72,29 @@ document.addEventListener('DOMContentLoaded', () => {
     creatorState.current = record;
     renderPreview(record);
     renderHistory();
-    renderExpiryAlerts();
-    showPublicToast('สร้างใบประกาศเรียบร้อย');
+    renderExpiryAlerts(creatorState.records);
+    renderCourseModule(record.courseId);
+    showToast('สร้างใบประกาศเรียบร้อย');
   });
 
   courseForm.addEventListener('submit', (event) => {
     event.preventDefault();
     try {
       const course = buildCourseFromForm(courseForm);
-      saveCourse(course);
+      const result = upsertCourse(creatorState.courses, course);
+      creatorState.courses = result.courses;
+      persistCourses(creatorState.courses);
+
       courseForm.reset();
       courseForm.hours.value = '6';
       courseForm.validityDays.value = '730';
-      renderCourses(course.id);
+      renderCourseModule(result.selectedCourseId);
       applySelectedCourseDefaults(true);
       creatorState.current = buildRecordFromForm(false);
       renderPreview(creatorState.current);
-      showPublicToast('เพิ่มหลักสูตรเรียบร้อย');
+      showToast(result.updated ? 'ปรับปรุงหลักสูตรเรียบร้อย' : 'เพิ่มหลักสูตรเรียบร้อย');
     } catch (error) {
-      showPublicToast(error.message || 'เพิ่มหลักสูตรไม่สำเร็จ');
+      showToast(error.message || 'เพิ่มหลักสูตรไม่สำเร็จ');
     }
   });
 
@@ -101,14 +117,15 @@ document.addEventListener('DOMContentLoaded', () => {
     creatorState.records = [];
     localStorage.removeItem(RECORD_STORAGE_KEY);
     renderHistory();
-    renderExpiryAlerts();
-    showPublicToast('ล้างประวัติแล้ว');
+    renderExpiryAlerts(creatorState.records);
+    renderCourseModule();
+    showToast('ล้างประวัติแล้ว');
   });
 
   creatorState.current = buildRecordFromForm(false);
   renderPreview(creatorState.current);
   renderHistory();
-  renderExpiryAlerts();
+  renderExpiryAlerts(creatorState.records);
 });
 
 async function verifyStaffSession() {
@@ -134,7 +151,7 @@ async function logoutStaff() {
 function buildRecordFromForm(finalize) {
   const form = document.getElementById('certificateForm');
   const values = Object.fromEntries(new FormData(form).entries());
-  const course = getCourseById(values.courseId) || creatorState.courses[0] || defaultCourses[0];
+  const course = getCourseById(creatorState.courses, values.courseId) || creatorState.courses[0] || defaultCourses[0];
   const courseCode = normalizeCourseCode(course.code);
   const issueDate = values.issueDate || formatDateInput(new Date());
   const shouldKeepCertificateNo = creatorState.current &&
@@ -142,8 +159,8 @@ function buildRecordFromForm(finalize) {
     isSavedRecord(creatorState.current.id);
   const existingCertificateNo = shouldKeepCertificateNo ? creatorState.current.certificateNo : '';
   const certificateNo = finalize
-    ? existingCertificateNo || makeCertificateNo(courseCode, issueDate)
-    : existingCertificateNo || previewCertificateNo(courseCode, issueDate);
+    ? existingCertificateNo || getNextCertificateNo(courseCode, issueDate)
+    : existingCertificateNo || getNextCertificateNo(courseCode, issueDate);
 
   return {
     id: (creatorState.current && creatorState.current.id) || makeId(),
@@ -165,20 +182,6 @@ function buildRecordFromForm(finalize) {
   };
 }
 
-function buildCourseFromForm(form) {
-  const values = Object.fromEntries(new FormData(form).entries());
-  const code = normalizeCourseCode(values.code);
-  if (!code) throw new Error('กรุณาระบุรหัสหลักสูตร');
-
-  return {
-    id: makeId(),
-    code,
-    name: clean(values.name) || code,
-    hours: clean(values.hours),
-    validityDays: clean(values.validityDays)
-  };
-}
-
 function saveRecord(record) {
   const existingIndex = creatorState.records.findIndex((item) => item.id === record.id);
   if (existingIndex >= 0) {
@@ -189,42 +192,6 @@ function saveRecord(record) {
 
   creatorState.records = creatorState.records.slice(0, 500);
   localStorage.setItem(RECORD_STORAGE_KEY, JSON.stringify(creatorState.records));
-}
-
-function saveCourse(course) {
-  const duplicate = creatorState.courses.find((item) => item.code === course.code);
-  if (duplicate) {
-    duplicate.name = course.name;
-    duplicate.hours = course.hours;
-    duplicate.validityDays = course.validityDays;
-  } else {
-    creatorState.courses.push(course);
-  }
-
-  localStorage.setItem(COURSE_STORAGE_KEY, JSON.stringify(creatorState.courses));
-}
-
-function deleteCourse(courseId) {
-  const course = getCourseById(courseId);
-  if (!course) return;
-
-  const usedCount = creatorState.records.filter((record) => record.courseId === courseId || record.courseCode === course.code).length;
-  const message = usedCount
-    ? `หลักสูตรนี้ถูกใช้ในใบประกาศ ${usedCount} รายการ หากลบ ประวัติเดิมจะยังเก็บชื่อหลักสูตรไว้ ต้องการลบหรือไม่?`
-    : 'ยืนยันการลบหลักสูตรนี้?';
-
-  if (!confirm(message)) return;
-
-  creatorState.courses = creatorState.courses.filter((item) => item.id !== courseId);
-  if (!creatorState.courses.length) {
-    creatorState.courses = defaultCourses.map((item) => Object.assign({}, item));
-  }
-  localStorage.setItem(COURSE_STORAGE_KEY, JSON.stringify(creatorState.courses));
-  renderCourses();
-  applySelectedCourseDefaults(true);
-  creatorState.current = buildRecordFromForm(false);
-  renderPreview(creatorState.current);
-  showPublicToast('ลบหลักสูตรแล้ว');
 }
 
 function loadRecords() {
@@ -239,57 +206,29 @@ function loadRecords() {
   }
 }
 
-function loadCourses() {
-  try {
-    const courses = JSON.parse(localStorage.getItem(COURSE_STORAGE_KEY) || '[]');
-    if (Array.isArray(courses) && courses.length) return courses;
-  } catch (error) {
-    // Fall through to defaults.
-  }
-  return defaultCourses.map((item) => Object.assign({}, item));
+function renderCourseModule(selectedCourseId) {
+  renderCourses(creatorState.courses, creatorState.records, selectedCourseId, deleteCourse);
+  renderSelectedCourseSummary(getSelectedCourse(creatorState.courses), getNextCertificateNoForSelectedCourse());
 }
 
-function renderCourses(selectedCourseId) {
-  const select = document.getElementById('courseSelect');
-  const list = document.getElementById('courseList');
-  const requestedCourseId = selectedCourseId || select.value;
-  const activeCourseId = getCourseById(requestedCourseId)
-    ? requestedCourseId
-    : (creatorState.courses[0] && creatorState.courses[0].id);
+function deleteCourse(courseId) {
+  const course = getCourseById(creatorState.courses, courseId);
+  if (!course) return;
 
-  select.innerHTML = creatorState.courses.map((course) => `
-    <option value="${escapeAttr(course.id)}">${escapeHtml(course.code)} - ${escapeHtml(course.name)}</option>
-  `).join('');
-  select.value = activeCourseId;
+  const usedCount = creatorState.records.filter((record) => record.courseId === courseId || record.courseCode === course.code).length;
+  const message = usedCount
+    ? `หลักสูตรนี้ถูกใช้ในใบประกาศ ${usedCount} รายการ หากลบ ประวัติเดิมจะยังเก็บชื่อหลักสูตรไว้ ต้องการลบหรือไม่?`
+    : 'ยืนยันการลบหลักสูตรนี้?';
 
-  document.getElementById('courseCount').textContent = `${creatorState.courses.length} รายการ`;
-  list.innerHTML = creatorState.courses.map((course) => `
-    <article class="course-item">
-      <div>
-        <strong>${escapeHtml(course.code)} - ${escapeHtml(course.name)}</strong>
-        <span>${escapeHtml(course.hours || '0')} ชั่วโมง · อายุใบประกาศ ${escapeHtml(course.validityDays || '0')} วัน</span>
-      </div>
-      <button class="delete-course-button" type="button" data-course-id="${escapeAttr(course.id)}">ลบ</button>
-    </article>
-  `).join('');
+  if (!confirm(message)) return;
 
-  list.querySelectorAll('.delete-course-button').forEach((button) => {
-    button.addEventListener('click', () => deleteCourse(button.dataset.courseId));
-  });
-
-  renderSelectedCourseSummary();
-}
-
-function renderSelectedCourseSummary() {
-  const course = getSelectedCourse();
-  const summary = document.getElementById('selectedCourseSummary');
-  if (!course) {
-    summary.textContent = 'ยังไม่มีหลักสูตร';
-    return;
-  }
-
-  const nextNo = previewCertificateNo(course.code, document.getElementById('certificateForm').issueDate.value);
-  summary.textContent = `รหัส ${course.code} · ${course.hours || 0} ชั่วโมง · อายุ ${course.validityDays || 0} วัน · เลขถัดไป ${nextNo}`;
+  creatorState.courses = removeCourse(creatorState.courses, courseId);
+  persistCourses(creatorState.courses);
+  renderCourseModule();
+  applySelectedCourseDefaults(true);
+  creatorState.current = buildRecordFromForm(false);
+  renderPreview(creatorState.current);
+  showToast('ลบหลักสูตรแล้ว');
 }
 
 function renderPreview(record) {
@@ -339,43 +278,15 @@ function renderHistory() {
       loadRecordIntoForm(record);
       creatorState.current = record;
       renderPreview(record);
-      renderSelectedCourseSummary();
-      showPublicToast('โหลดรายการแล้ว');
+      renderCourseModule(record.courseId);
+      showToast('โหลดรายการแล้ว');
     });
   });
 }
 
-function renderExpiryAlerts() {
-  const alerts = creatorState.records
-    .map((record) => ({ record, expiry: getExpiryState(record) }))
-    .filter((item) => item.expiry.kind === 'expired' || item.expiry.kind === 'warning')
-    .sort((a, b) => a.expiry.daysLeft - b.expiry.daysLeft);
-
-  const container = document.getElementById('expiryAlerts');
-  document.getElementById('expiryCount').textContent = `${alerts.length} รายการ`;
-
-  if (!alerts.length) {
-    container.innerHTML = `
-      <article class="empty-state">
-        <strong>ไม่มีรายการต้องแจ้งเตือน</strong>
-        <span>ระบบจะแสดงใบประกาศที่หมดอายุแล้วหรือใกล้หมดอายุใน ${EXPIRY_WARNING_DAYS} วัน</span>
-      </article>
-    `;
-    return;
-  }
-
-  container.innerHTML = alerts.map(({ record, expiry }) => `
-    <article class="expiry-item is-${expiry.kind}">
-      <strong>${escapeHtml(record.recipientName)} · ${escapeHtml(record.certificateNo)}</strong>
-      <span>${escapeHtml(record.courseCode)} - ${escapeHtml(record.courseName)}</span>
-      <span>${escapeHtml(expiry.label)}</span>
-    </article>
-  `).join('');
-}
-
 function loadRecordIntoForm(record) {
   const form = document.getElementById('certificateForm');
-  const course = getCourseById(record.courseId) || getCourseByCode(record.courseCode);
+  const course = getCourseById(creatorState.courses, record.courseId) || getCourseByCode(creatorState.courses, record.courseCode);
 
   form.organizationName.value = record.organizationName || '';
   form.certificateTitle.value = record.certificateTitle || '';
@@ -386,7 +297,7 @@ function loadRecordIntoForm(record) {
   form.signerName.value = record.signerName || '';
   form.signerTitle.value = record.signerTitle || '';
   form.note.value = record.note || '';
-  renderSelectedCourseSummary();
+  renderSelectedCourseSummary(getSelectedCourse(creatorState.courses), getNextCertificateNoForSelectedCourse());
 }
 
 function resetCertificateForm() {
@@ -400,149 +311,37 @@ function resetCertificateForm() {
   applySelectedCourseDefaults(true);
   creatorState.current = buildRecordFromForm(false);
   renderPreview(creatorState.current);
-  renderSelectedCourseSummary();
+  renderCourseModule(form.courseId.value);
 }
 
 function applySelectedCourseDefaults(forceExpireDate) {
   const form = document.getElementById('certificateForm');
-  const course = getSelectedCourse();
+  const course = getSelectedCourse(creatorState.courses);
   if (!course) return;
 
   if (forceExpireDate || !form.expireDate.value) {
     form.expireDate.value = calculateExpireDate(form.issueDate.value, Number(course.validityDays || 0));
   }
 
-  renderSelectedCourseSummary();
+  renderSelectedCourseSummary(course, getNextCertificateNo(course.code, form.issueDate.value));
 }
 
-function makeCertificateNo(courseCode, issueDate) {
-  const year = toThaiYear(issueDate);
-  const prefix = `CERT-${normalizeCourseCode(courseCode)}-${year}`;
-  const next = creatorState.records
-    .filter((record) => record.id !== (creatorState.current && creatorState.current.id))
-    .filter((record) => String(record.certificateNo || '').startsWith(prefix))
-    .length + 1;
-  return `${prefix}-${String(next).padStart(4, '0')}`;
+function getNextCertificateNoForSelectedCourse() {
+  const form = document.getElementById('certificateForm');
+  const course = getSelectedCourse(creatorState.courses);
+  if (!course) return '';
+  return getNextCertificateNo(course.code, form.issueDate.value);
 }
 
-function previewCertificateNo(courseCode, issueDate) {
-  return makeCertificateNo(courseCode, issueDate);
+function getNextCertificateNo(courseCode, issueDate) {
+  return makeCertificateNo(
+    creatorState.records,
+    creatorState.current && creatorState.current.id,
+    courseCode,
+    issueDate
+  );
 }
 
 function isSavedRecord(id) {
   return creatorState.records.some((record) => record.id === id);
-}
-
-function getExpiryState(record) {
-  if (!record.expireDate) {
-    return { kind: 'none', daysLeft: Infinity, label: 'ไม่มีวันหมดอายุ' };
-  }
-
-  const today = startOfDay(new Date());
-  const expireDate = startOfDay(parseDateInput(record.expireDate));
-  if (Number.isNaN(expireDate.getTime())) {
-    return { kind: 'none', daysLeft: Infinity, label: 'วันหมดอายุไม่ถูกต้อง' };
-  }
-
-  const daysLeft = Math.ceil((expireDate.getTime() - today.getTime()) / 86400000);
-  if (daysLeft < 0) {
-    return { kind: 'expired', daysLeft, label: `หมดอายุแล้ว ${Math.abs(daysLeft)} วัน (${toThaiDate(record.expireDate)})` };
-  }
-  if (daysLeft <= EXPIRY_WARNING_DAYS) {
-    return { kind: 'warning', daysLeft, label: `ใกล้หมดอายุใน ${daysLeft} วัน (${toThaiDate(record.expireDate)})` };
-  }
-  return { kind: 'valid', daysLeft, label: `ยังไม่หมดอายุ เหลือ ${daysLeft} วัน` };
-}
-
-function calculateExpireDate(issueDate, validityDays) {
-  if (!validityDays) return '';
-  const date = issueDate ? parseDateInput(issueDate) : new Date();
-  if (Number.isNaN(date.getTime())) return '';
-  date.setDate(date.getDate() + validityDays);
-  return formatDateInput(date);
-}
-
-function getSelectedCourse() {
-  return getCourseById(document.getElementById('courseSelect').value);
-}
-
-function getCourseById(id) {
-  return creatorState.courses.find((course) => course.id === id) || null;
-}
-
-function getCourseByCode(code) {
-  const normalizedCode = normalizeCourseCode(code);
-  return creatorState.courses.find((course) => course.code === normalizedCode) || null;
-}
-
-function normalizeCourseCode(value) {
-  const code = String(value || 'NIEM').toUpperCase().replace(/[^A-Z0-9]+/g, '');
-  return code.slice(0, 12) || 'NIEM';
-}
-
-function makeId() {
-  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-    return window.crypto.randomUUID();
-  }
-  return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
-}
-
-function toThaiYear(value) {
-  const date = value ? parseDateInput(value) : new Date();
-  if (Number.isNaN(date.getTime())) return new Date().getFullYear() + 543;
-  return date.getFullYear() + 543;
-}
-
-function toThaiDate(value) {
-  if (!value) return '-';
-  const date = parseDateInput(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' });
-}
-
-function parseDateInput(value) {
-  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return new Date(value);
-  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-}
-
-function formatDateInput(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function startOfDay(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function setText(id, value) {
-  document.getElementById(id).textContent = value || '';
-}
-
-function clean(value) {
-  return String(value || '').trim();
-}
-
-function showPublicToast(message) {
-  const toast = document.getElementById('publicToast');
-  toast.textContent = message;
-  toast.classList.add('is-visible');
-  window.clearTimeout(showPublicToast.timer);
-  showPublicToast.timer = window.setTimeout(() => toast.classList.remove('is-visible'), 3200);
-}
-
-function escapeHtml(value) {
-  return String(value || '').replace(/[&<>"']/g, (char) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  })[char]);
-}
-
-function escapeAttr(value) {
-  return escapeHtml(value).replace(/`/g, '&#096;');
 }

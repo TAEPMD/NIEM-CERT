@@ -95,4 +95,10 @@ The creator page supports:
 - Local history in the browser via `localStorage`
 - Print / Save as PDF using browser print
 
+Staff page modules:
+
+- `modules/courses.js` manages course master data, course rendering, and per-course certificate numbers
+- `modules/expiry.js` manages expiry date calculation and warning lists
+- `modules/utils.js` contains shared browser formatting and escaping helpers
+
 This page is protected by a Vercel httpOnly staff session cookie. After login, it is intentionally client-side only, so certificate/course history is stored in that browser via `localStorage`. Use the Apps Script admin system when records must be stored centrally and searchable by the public search page.
