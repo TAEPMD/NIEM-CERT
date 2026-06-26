@@ -34,6 +34,16 @@ export function upsertRecord(records, record) {
   return nextRecords.slice(0, 500);
 }
 
+export function removeRecord(records, id) {
+  return records.filter((item) => item.id !== id);
+}
+
+export function toggleArchiveRecord(records, id) {
+  return records.map((item) =>
+    item.id === id ? { ...item, archived: !item.archived } : item
+  );
+}
+
 export function saveRenewalDraft(record) {
   sessionStorage.setItem(RENEWAL_DRAFT_STORAGE_KEY, JSON.stringify(record));
 }

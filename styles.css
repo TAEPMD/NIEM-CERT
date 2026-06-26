@@ -843,6 +843,114 @@ a {
   min-height: 34px;
 }
 
+.edit-record-button,
+.archive-record-button,
+.delete-record-button {
+  min-height: 34px;
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 0 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.edit-record-button {
+  border: 1px solid var(--border);
+  color: var(--primary);
+}
+
+.archive-record-button {
+  border: 1px solid #bcd0ea;
+  color: var(--muted);
+}
+
+.delete-record-button {
+  border: 1px solid #f5c2c2;
+  color: var(--red);
+}
+
+.history-item.is-archived {
+  opacity: 0.65;
+  border-style: dashed;
+}
+
+.archived-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  background: #e8edf5;
+  color: var(--muted);
+  border-radius: 4px;
+  padding: 1px 6px;
+  vertical-align: middle;
+  margin-left: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.edit-record-dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0;
+  width: min(480px, calc(100vw - 32px));
+  background: var(--surface);
+}
+
+.edit-record-dialog::backdrop {
+  background: rgba(13, 39, 74, 0.35);
+}
+
+.edit-record-dialog form {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+
+.edit-record-dialog label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.edit-record-dialog input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  color: var(--text);
+  background: #fff;
+  outline: 0;
+  font-weight: 500;
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dialog-header strong {
+  font-size: 16px;
+}
+
+.dialog-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-radius: var(--radius);
+}
+
+.dialog-close:hover {
+  background: var(--bg);
+}
+
 .certificate-page {
   --cert-primary: #0d3b78;
   --cert-accent: #0fafa3;

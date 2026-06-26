@@ -16,7 +16,10 @@ import {
 import {
   clearRecords,
   loadRecords,
-  saveRenewalDraft
+  persistRecords,
+  removeRecord,
+  saveRenewalDraft,
+  toggleArchiveRecord
 } from './modules/records.js';
 import {
   escapeAttr,
@@ -29,6 +32,7 @@ import {
 const managerState = {
   records: [],
   courses: [],
+  showArchived: false,
   filters: {
     keyword: '',
     courseCode: '',
@@ -106,6 +110,41 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('ล้างประวัติแล้ว');
   });
 
+  document.getElementById('toggleArchivedButton').addEventListener('click', () => {
+    managerState.showArchived = !managerState.showArchived;
+    document.getElementById('toggleArchivedButton').textContent = managerState.showArchived
+      ? 'ซ่อน archived'
+      : 'แสดง archived';
+    renderHistory();
+  });
+
+  const editDialog = document.getElementById('editRecordDialog');
+  const editForm = document.getElementById('editRecordForm');
+
+  document.getElementById('editRecordCloseButton').addEventListener('click', () => editDialog.close());
+  document.getElementById('editRecordCancelButton').addEventListener('click', () => editDialog.close());
+
+  editForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const values = Object.fromEntries(new FormData(editForm).entries());
+    const idx = managerState.records.findIndex((r) => r.id === values.id);
+    if (idx < 0) return;
+    managerState.records[idx] = {
+      ...managerState.records[idx],
+      recipientName: values.recipientName.trim(),
+      certificateNo: values.certificateNo.trim(),
+      courseCode: values.courseCode.trim(),
+      courseName: values.courseName.trim(),
+      issueDate: values.issueDate,
+      expireDate: values.expireDate,
+      note: values.note.trim()
+    };
+    persistRecords(managerState.records);
+    editDialog.close();
+    renderAll();
+    showToast('บันทึกการแก้ไขเรียบร้อย');
+  });
+
   renderAll();
 });
 
@@ -158,6 +197,7 @@ function getDashboardStats() {
   let latestIssueDate = null;
 
   managerState.records.forEach((record) => {
+    if (record.archived) return;
     const expiry = getExpiryState(record);
     if (expiry.kind === 'valid') stats.valid += 1;
     if (expiry.kind === 'warning') stats.warning += 1;
@@ -244,6 +284,8 @@ function renderHistoryCourseFilter() {
 
 function getFilteredRecords() {
   return managerState.records.filter((record) => {
+    if (record.archived && !managerState.showArchived) return false;
+    if (!record.archived && managerState.showArchived) return false;
     const expiry = getExpiryState(record);
     const haystack = [
       record.recipientName,
@@ -296,14 +338,18 @@ function renderHistory() {
 
   list.innerHTML = filteredRecords.map((record) => {
     const expiry = getExpiryState(record);
+    const isArchived = record.archived === true;
     return `
-      <article class="history-item" data-id="${escapeAttr(record.id)}">
-        <strong>${escapeHtml(record.recipientName)}</strong>
+      <article class="history-item${isArchived ? ' is-archived' : ''}" data-id="${escapeAttr(record.id)}">
+        <strong>${escapeHtml(record.recipientName)}${isArchived ? ' <span class="archived-badge">archived</span>' : ''}</strong>
         <span>${escapeHtml(record.certificateNo)} · ${escapeHtml(record.courseCode)} · ${escapeHtml(record.courseName)}</span>
         <span>ออกวันที่ ${escapeHtml(formatDisplayDate(record.issueDate))} · หมดอายุ ${escapeHtml(formatDisplayDate(record.expireDate))}</span>
         <span>${escapeHtml(expiry.label)}</span>
         <div class="history-actions">
-          <button class="ghost-button renew-button" type="button" data-id="${escapeAttr(record.id)}">ต่ออายุ</button>
+          ${isArchived ? '' : `<button class="ghost-button renew-button" type="button" data-id="${escapeAttr(record.id)}">ต่ออายุ</button>`}
+          <button class="edit-record-button" type="button" data-id="${escapeAttr(record.id)}">แก้ไข</button>
+          <button class="archive-record-button" type="button" data-id="${escapeAttr(record.id)}">${isArchived ? 'ยกเลิก archive' : 'Archive'}</button>
+          <button class="delete-record-button" type="button" data-id="${escapeAttr(record.id)}">ลบ</button>
         </div>
       </article>
     `;
@@ -312,6 +358,50 @@ function renderHistory() {
   list.querySelectorAll('.renew-button').forEach((button) => {
     button.addEventListener('click', () => renewCertificate(button.dataset.id));
   });
+  list.querySelectorAll('.edit-record-button').forEach((button) => {
+    button.addEventListener('click', () => editRecord(button.dataset.id));
+  });
+  list.querySelectorAll('.archive-record-button').forEach((button) => {
+    button.addEventListener('click', () => archiveRecord(button.dataset.id));
+  });
+  list.querySelectorAll('.delete-record-button').forEach((button) => {
+    button.addEventListener('click', () => deleteRecord(button.dataset.id));
+  });
+}
+
+function editRecord(recordId) {
+  const record = managerState.records.find((item) => item.id === recordId);
+  if (!record) return;
+  const dialog = document.getElementById('editRecordDialog');
+  const form = document.getElementById('editRecordForm');
+  form.elements.id.value = record.id;
+  form.elements.recipientName.value = record.recipientName || '';
+  form.elements.certificateNo.value = record.certificateNo || '';
+  form.elements.courseCode.value = record.courseCode || '';
+  form.elements.courseName.value = record.courseName || '';
+  form.elements.issueDate.value = record.issueDate || '';
+  form.elements.expireDate.value = record.expireDate || '';
+  form.elements.note.value = record.note || '';
+  dialog.showModal();
+}
+
+function deleteRecord(recordId) {
+  const record = managerState.records.find((item) => item.id === recordId);
+  if (!record) return;
+  if (!confirm(`ยืนยันการลบใบประกาศเลขที่ ${record.certificateNo} ของ ${record.recipientName}?`)) return;
+  managerState.records = removeRecord(managerState.records, recordId);
+  persistRecords(managerState.records);
+  renderAll();
+  showToast('ลบใบประกาศแล้ว');
+}
+
+function archiveRecord(recordId) {
+  const record = managerState.records.find((item) => item.id === recordId);
+  if (!record) return;
+  managerState.records = toggleArchiveRecord(managerState.records, recordId);
+  persistRecords(managerState.records);
+  renderAll();
+  showToast(record.archived ? 'นำออกจาก archived แล้ว' : 'เก็บ archived แล้ว');
 }
 
 function renewCertificate(recordId) {
