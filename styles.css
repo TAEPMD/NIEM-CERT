@@ -755,14 +755,17 @@ a {
   --cert-border-style: double;
   --cert-font-scale: 1;
   --cert-logo-size: 92px;
-  width: min(100%, 1123px);
+  container-type: inline-size;
+  width: 100%;
+  max-width: 1123px;
   aspect-ratio: 1.414 / 1;
-  min-width: 760px;
+  min-width: 0;
   margin: 0 auto;
   background: #fff;
   color: #102a43;
   box-shadow: 0 24px 70px rgba(13, 39, 74, 0.14);
-  padding: 34px;
+  padding: clamp(14px, 3cqw, 34px);
+  overflow: hidden;
 }
 
 .bulk-print-pages {
@@ -787,35 +790,51 @@ a {
 .certificate-border {
   height: 100%;
   border: 8px var(--cert-border-style) var(--cert-border-color);
-  padding: 26px 34px;
+  padding: clamp(14px, 2.8cqw, 34px);
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: min-content minmax(0, 1fr) min-content;
+  gap: clamp(6px, 1.2cqw, 14px);
+  overflow: hidden;
   background:
     linear-gradient(135deg, rgba(15, 175, 163, 0.08), transparent 34%),
     linear-gradient(315deg, rgba(226, 163, 11, 0.11), transparent 32%),
     #fff;
 }
 
-.certificate-topline,
-.certificate-footer {
+.certificate-topline {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 10px 20px;
+  flex-wrap: wrap;
   color: #5f7187;
-  font-size: 14px;
+  font-size: clamp(11px, 1.35cqw, 14px);
+  line-height: 1.3;
+}
+
+.certificate-footer {
+  display: grid;
+  grid-template-columns: minmax(118px, 1fr) minmax(180px, 1.6fr) minmax(118px, 1fr);
+  align-items: end;
+  gap: clamp(8px, 1.8cqw, 20px);
+  color: #5f7187;
+  font-size: clamp(11px, 1.3cqw, 14px);
+  line-height: 1.25;
 }
 
 .certificate-body {
-  align-self: center;
+  min-height: 0;
+  align-self: stretch;
   text-align: center;
   display: grid;
-  gap: 12px;
+  align-content: center;
+  gap: clamp(4px, 1cqw, 12px);
+  overflow: hidden;
 }
 
 .certificate-logo {
-  width: var(--cert-logo-size);
-  max-height: var(--cert-logo-size);
+  width: min(var(--cert-logo-size), 14cqw);
+  max-height: min(var(--cert-logo-size), 14cqw);
   object-fit: contain;
   justify-self: center;
   margin-bottom: 2px;
@@ -827,73 +846,82 @@ a {
 .certificate-meta,
 .certificate-note {
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .certificate-org {
   color: var(--cert-primary);
   font-weight: 800;
-  font-size: calc(22px * var(--cert-font-scale));
+  font-size: clamp(calc(14px * var(--cert-font-scale)), calc(2.1cqw * var(--cert-font-scale)), calc(22px * var(--cert-font-scale)));
+  line-height: 1.2;
 }
 
 .certificate-body h2 {
   margin: 0;
   color: var(--cert-primary);
-  font-size: clamp(calc(38px * var(--cert-font-scale)), 5vw, calc(64px * var(--cert-font-scale)));
+  font-size: clamp(calc(28px * var(--cert-font-scale)), calc(5.8cqw * var(--cert-font-scale)), calc(64px * var(--cert-font-scale)));
   line-height: 1.05;
+  overflow-wrap: anywhere;
 }
 
 .certificate-lead,
 .certificate-copy {
   color: #5f7187;
-  font-size: calc(19px * var(--cert-font-scale));
+  font-size: clamp(calc(12px * var(--cert-font-scale)), calc(1.75cqw * var(--cert-font-scale)), calc(19px * var(--cert-font-scale)));
+  line-height: 1.35;
 }
 
 .certificate-body h3 {
   margin: 0;
   color: var(--cert-accent);
-  font-size: clamp(calc(34px * var(--cert-font-scale)), 4vw, calc(54px * var(--cert-font-scale)));
+  font-size: clamp(calc(24px * var(--cert-font-scale)), calc(4.8cqw * var(--cert-font-scale)), calc(54px * var(--cert-font-scale)));
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .certificate-body h4 {
   margin: 0;
   color: #102a43;
-  font-size: clamp(calc(24px * var(--cert-font-scale)), 3vw, calc(36px * var(--cert-font-scale)));
-  line-height: 1.25;
+  font-size: clamp(calc(17px * var(--cert-font-scale)), calc(3.2cqw * var(--cert-font-scale)), calc(36px * var(--cert-font-scale)));
+  line-height: 1.18;
+  overflow-wrap: anywhere;
 }
 
 .certificate-meta,
 .certificate-note {
   color: #5f7187;
-  font-size: calc(16px * var(--cert-font-scale));
+  font-size: clamp(calc(11px * var(--cert-font-scale)), calc(1.5cqw * var(--cert-font-scale)), calc(16px * var(--cert-font-scale)));
+  line-height: 1.3;
 }
 
 .certificate-footer > div {
-  min-width: 170px;
+  min-width: 0;
   display: grid;
   gap: 4px;
+  overflow-wrap: anywhere;
 }
 
 .certificate-footer span {
   color: #5f7187;
-  font-size: 13px;
+  font-size: clamp(10px, 1.15cqw, 13px);
 }
 
 .certificate-footer strong {
   color: #102a43;
-  font-size: 15px;
+  font-size: clamp(11px, 1.35cqw, 15px);
+  line-height: 1.2;
 }
 
 .signature-block {
-  min-width: 260px;
+  min-width: 0;
   text-align: center;
 }
 
 .signature-grid {
-  min-width: min(520px, 100%);
+  min-width: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(96px, 100%), 1fr));
+  gap: clamp(6px, 1.2cqw, 14px);
   align-items: end;
 }
 
@@ -902,15 +930,31 @@ a {
 }
 
 .signature-image {
-  width: 160px;
-  max-height: 56px;
+  width: min(160px, 80%);
+  max-height: clamp(28px, 5cqw, 56px);
   object-fit: contain;
   justify-self: center;
   margin: 0 auto 4px;
 }
 
+.signature-block strong,
+.signature-block span {
+  display: block;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.signature-block strong {
+  font-size: clamp(10px, 1.25cqw, 14px);
+}
+
+.signature-block span {
+  color: #5f7187;
+  font-size: clamp(9px, 1.1cqw, 12px);
+}
+
 .signature-line {
-  width: 240px;
+  width: min(240px, 100%);
   max-width: 100%;
   height: 1px;
   margin: 0 auto 7px;
