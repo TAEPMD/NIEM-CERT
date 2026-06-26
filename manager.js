@@ -270,6 +270,8 @@ function renewCertificate(recordId) {
     expireDate: course ? calculateExpireDate(issueDate, course) : '',
     signerName: record.signerName || '',
     signerTitle: record.signerTitle || '',
+    logoDataUrl: record.logoDataUrl || '',
+    signatureDataUrl: record.signatureDataUrl || '',
     note: `ต่ออายุจากใบประกาศเลขที่ ${record.certificateNo}`,
     renewalOf: record.id,
     previousCertificateNo: record.certificateNo,

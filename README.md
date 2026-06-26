@@ -89,10 +89,25 @@ The creator page supports:
 
 - Certificate form
 - Live A4 landscape preview
+- Logo image upload for the certificate
+- Digital signature image upload
+- Signer name and signer title fields
 - Auto certificate number format: `CERT-COURSECODE-BEYEAR-0001`
 - Per-course certificate running numbers
+- Bulk certificate creation from CSV recipient files
+- Bulk print / Save PDF for the generated CSV batch
 - Local history in the browser via `localStorage`
 - Print / Save as PDF using browser print
+
+Bulk CSV format:
+
+```csv
+recipientName,note
+สมชาย ใจดี,รุ่นที่ 1
+สมหญิง ตั้งใจ,รุ่นที่ 1
+```
+
+If there is no header row, the first column is treated as recipient name and the second column as note.
 
 ## Certificate Management
 
