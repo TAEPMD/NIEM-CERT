@@ -83,6 +83,9 @@ The creator page supports:
 - Certificate form
 - Live A4 landscape preview
 - Auto certificate number format: `CERT-COURSECODE-BEYEAR-0001`
+- Course master data: add/delete courses with code, name, hours, and certificate validity days
+- Per-course certificate running numbers
+- Expiry tracking for expired certificates and certificates expiring within 30 days
 - Local history in the browser via `localStorage`
 - Print / Save as PDF using browser print
 

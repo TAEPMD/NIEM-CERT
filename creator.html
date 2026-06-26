@@ -48,20 +48,10 @@
 
             <label>
               หลักสูตร / กิจกรรม
-              <input name="courseName" type="text" placeholder="ชื่อหลักสูตรหรือกิจกรรม" required>
+              <select name="courseId" id="courseSelect" required></select>
             </label>
 
-            <div class="form-grid">
-              <label>
-                รหัสหลักสูตร
-                <input name="courseCode" type="text" value="NIEM">
-              </label>
-
-              <label>
-                ชั่วโมงอบรม
-                <input name="hours" type="number" min="0" step="1" value="6">
-              </label>
-            </div>
+            <div class="course-summary" id="selectedCourseSummary"></div>
 
             <div class="form-grid">
               <label>
@@ -95,6 +85,43 @@
               <button class="ghost-button" id="clearButton" type="button">ล้างฟอร์ม</button>
             </div>
           </form>
+
+          <section class="course-panel">
+            <div class="section-heading tight">
+              <h2>หลักสูตร</h2>
+              <span id="courseCount">0 รายการ</span>
+            </div>
+            <form id="courseForm" class="course-form">
+              <div class="form-grid">
+                <label>
+                  รหัส
+                  <input name="code" type="text" placeholder="เช่น BLS" required>
+                </label>
+                <label>
+                  ชั่วโมง
+                  <input name="hours" type="number" min="0" step="1" value="6">
+                </label>
+              </div>
+              <label>
+                ชื่อหลักสูตร
+                <input name="name" type="text" placeholder="ชื่อหลักสูตรหรือกิจกรรม" required>
+              </label>
+              <label>
+                อายุใบประกาศ (วัน)
+                <input name="validityDays" type="number" min="0" step="1" value="730">
+              </label>
+              <button class="ghost-button full" type="submit">เพิ่มหลักสูตร</button>
+            </form>
+            <div id="courseList" class="course-list"></div>
+          </section>
+
+          <section class="expiry-panel">
+            <div class="section-heading tight">
+              <h2>แจ้งเตือนหมดอายุ</h2>
+              <span id="expiryCount">0 รายการ</span>
+            </div>
+            <div id="expiryAlerts" class="expiry-list"></div>
+          </section>
 
           <section class="history-panel">
             <div class="section-heading tight">

@@ -25,6 +25,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -417,6 +418,7 @@ a {
 }
 
 .certificate-form input,
+.certificate-form select,
 .certificate-form textarea {
   width: 100%;
   border: 1px solid var(--border);
@@ -430,6 +432,16 @@ a {
 
 .certificate-form textarea {
   resize: vertical;
+}
+
+.course-summary {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #f8fbfd;
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .form-grid {
@@ -474,9 +486,96 @@ a {
   padding: 0;
 }
 
+.course-panel,
+.expiry-panel,
 .history-panel {
   display: grid;
   gap: 10px;
+}
+
+.course-form {
+  display: grid;
+  gap: 10px;
+}
+
+.course-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.course-form input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  color: var(--text);
+  background: #fff;
+  outline: 0;
+  font-weight: 500;
+}
+
+.full {
+  width: 100%;
+}
+
+.course-list,
+.expiry-list {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.course-item,
+.expiry-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.course-item {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.course-item strong,
+.expiry-item strong {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.course-item span,
+.expiry-item span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.delete-course-button {
+  min-height: 34px;
+  border: 1px solid #f5c2c2;
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--red);
+  padding: 0 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.expiry-item.is-warning {
+  border-color: #f1c96d;
+  background: #fffaf0;
+}
+
+.expiry-item.is-expired {
+  border-color: #f5c2c2;
+  background: #fff0f0;
 }
 
 .history-list {
