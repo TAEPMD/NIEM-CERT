@@ -83,6 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
     await loadBulkCsv(event.target.files[0]);
   });
 
+  document.getElementById('bulkPreviewList').addEventListener('click', (event) => {
+    const item = event.target.closest('.bulk-preview-item');
+    if (!item) return;
+    applyBulkRecipientToForm(Number(item.dataset.bulkIndex || 0));
+  });
+
   document.getElementById('bulkCreateButton').addEventListener('click', () => {
     createBulkCertificates();
   });
@@ -363,6 +369,7 @@ async function loadBulkCsv(file) {
     const text = await readFileAsText(file);
     creatorState.bulkRecipients = csvRowsToRecipients(parseCsv(text));
     renderBulkPreview();
+    applyBulkRecipientToForm(0);
     showToast(`อ่านรายชื่อจาก CSV ${creatorState.bulkRecipients.length} รายการ`);
   } catch (error) {
     creatorState.bulkRecipients = [];
@@ -383,11 +390,23 @@ function renderBulkPreview() {
   }
 
   list.innerHTML = creatorState.bulkRecipients.slice(0, 8).map((item, index) => `
-    <div class="bulk-preview-item">
+    <button class="bulk-preview-item" type="button" data-bulk-index="${index}">
       <strong>${index + 1}. ${escapeText(item.recipientName)}</strong>
       <span>${escapeText(item.note || '')}</span>
-    </div>
+    </button>
   `).join('') + (count > 8 ? `<div class="bulk-preview-more">และอีก ${count - 8} รายการ</div>` : '');
+}
+
+function applyBulkRecipientToForm(index) {
+  const recipient = creatorState.bulkRecipients[index];
+  if (!recipient) return;
+
+  const form = document.getElementById('certificateForm');
+  form.elements.recipientName.value = recipient.recipientName;
+  if (recipient.note && !clean(form.elements.note.value)) {
+    form.elements.note.value = recipient.note;
+  }
+  refreshPreview();
 }
 
 function createBulkCertificates() {
