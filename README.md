@@ -88,7 +88,7 @@ Open after staff login:
 The creator page supports:
 
 - Certificate form
-- Live A4 landscape preview
+- Realtime A4 landscape preview while editing certificate data
 - Logo image upload for the certificate
 - Multiple signers, each with signer name, signer title, and digital signature image
 - Auto certificate number format: `CERT-COURSECODE-BEYEAR-0001`
