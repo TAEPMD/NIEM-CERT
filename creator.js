@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('certificateForm');
   const courseForm = document.getElementById('courseForm');
 
+  verifyStaffSession();
   creatorState.records = loadRecords();
   creatorState.courses = loadCourses();
   form.issueDate.value = formatDateInput(new Date());
@@ -85,6 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.print();
   });
 
+  const logoutButton = document.getElementById('staffLogoutButton');
+  if (logoutButton) {
+    logoutButton.addEventListener('click', logoutStaff);
+  }
+
   document.getElementById('clearButton').addEventListener('click', () => {
     resetCertificateForm();
   });
@@ -104,6 +110,26 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHistory();
   renderExpiryAlerts();
 });
+
+async function verifyStaffSession() {
+  try {
+    const response = await fetch('/api/staff-session', { cache: 'no-store' });
+    const payload = await response.json();
+    if (!payload || !payload.data || payload.data.authenticated !== true) {
+      window.location.replace('/staff-login.html?next=/staff');
+    }
+  } catch (error) {
+    window.location.replace('/staff-login.html?next=/staff');
+  }
+}
+
+async function logoutStaff() {
+  try {
+    await fetch('/api/staff-logout', { method: 'POST' });
+  } finally {
+    window.location.replace('/staff-login.html');
+  }
+}
 
 function buildRecordFromForm(finalize) {
   const form = document.getElementById('certificateForm');

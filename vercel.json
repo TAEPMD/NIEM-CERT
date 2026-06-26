@@ -1,6 +1,25 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".",
+  "functions": {
+    "api/staff-page.js": {
+      "includeFiles": "creator.html"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/staff",
+      "destination": "/api/staff-page"
+    },
+    {
+      "source": "/staff/",
+      "destination": "/api/staff-page"
+    },
+    {
+      "source": "/creator.html",
+      "destination": "/api/staff-page"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

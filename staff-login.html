@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <title>เข้าสู่ระบบเจ้าหน้าที่ | Certificate Manager</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="login-shell">
+      <section class="login-card">
+        <a class="brand" href="/" aria-label="หน้าหลัก">
+          <span class="brand-mark">C</span>
+          <span>
+            <strong>ระบบออกใบประกาศ</strong>
+            <small>Staff Login</small>
+          </span>
+        </a>
+
+        <div>
+          <h1>เข้าสู่ระบบเจ้าหน้าที่</h1>
+          <p>กรุณากรอกรหัสผ่านเพื่อจัดการหลักสูตร รันเลขใบประกาศ และติดตามวันหมดอายุ</p>
+        </div>
+
+        <div class="error-box" id="loginError"></div>
+
+        <form id="staffLoginForm" class="certificate-form">
+          <label>
+            รหัสผ่าน
+            <input id="staffPassword" name="password" type="password" autocomplete="current-password" required autofocus>
+          </label>
+          <button class="primary-button full" id="staffLoginButton" type="submit">เข้าสู่ระบบ</button>
+        </form>
+
+        <p class="back-link"><a href="/">กลับหน้าค้นหาใบประกาศ</a></p>
+      </section>
+    </main>
+
+    <script src="/staff-login.js"></script>
+  </body>
+</html>

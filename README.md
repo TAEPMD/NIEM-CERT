@@ -5,7 +5,7 @@ This folder is a Vercel-ready gateway for the existing Google Apps Script system
 Vercel hosts:
 
 - Public certificate search UI
-- Local certificate creator at `/creator.html`
+- Protected staff certificate creator at `/staff`
 - `/api/search` proxy to Apps Script
 - `/api/redirect` for admin and verify pages
 
@@ -32,6 +32,8 @@ Set this in Vercel Project Settings:
 
 ```text
 APPS_SCRIPT_WEB_APP_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+STAFF_PASSWORD=your-staff-password
+STAFF_AUTH_SECRET=random-secret-at-least-24-characters
 ```
 
 Do not use a `googleusercontent.com/userCodeAppPanel` URL.
@@ -45,7 +47,7 @@ npm install
 npm run dev
 ```
 
-Edit `.env.local` and set `APPS_SCRIPT_WEB_APP_URL`.
+Edit `.env.local` and set `APPS_SCRIPT_WEB_APP_URL`, `STAFF_PASSWORD`, and `STAFF_AUTH_SECRET`.
 
 ## Deploy
 
@@ -66,16 +68,20 @@ npx vercel --prod
 ```bash
 npx vercel env add APPS_SCRIPT_WEB_APP_URL production
 npx vercel env add APPS_SCRIPT_WEB_APP_URL preview
+npx vercel env add STAFF_PASSWORD production
+npx vercel env add STAFF_AUTH_SECRET production
+npx vercel env add STAFF_PASSWORD preview
+npx vercel env add STAFF_AUTH_SECRET preview
 ```
 
 Then redeploy.
 
 ## Certificate Creator
 
-Open:
+Open after staff login:
 
 ```text
-/creator.html
+/staff
 ```
 
 The creator page supports:
@@ -89,4 +95,4 @@ The creator page supports:
 - Local history in the browser via `localStorage`
 - Print / Save as PDF using browser print
 
-This page is intentionally client-side only. It does not write to Google Sheets or Google Drive. Use the Apps Script admin system when records must be stored centrally and searchable by the public search page.
+This page is protected by a Vercel httpOnly staff session cookie. After login, it is intentionally client-side only, so certificate/course history is stored in that browser via `localStorage`. Use the Apps Script admin system when records must be stored centrally and searchable by the public search page.
