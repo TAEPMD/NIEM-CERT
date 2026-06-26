@@ -2,6 +2,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('staffLoginForm');
   const button = document.getElementById('staffLoginButton');
   const errorBox = document.getElementById('loginError');
+  const params = new URLSearchParams(window.location.search);
+  const initialError = params.get('error');
+
+  if (initialError) {
+    errorBox.textContent = initialError;
+    errorBox.classList.add('is-visible');
+  }
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();

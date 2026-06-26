@@ -3,7 +3,19 @@ const path = require('path');
 const { isAuthenticated } = require('../lib/staff-auth');
 
 module.exports = function handler(req, res) {
-  if (!isAuthenticated(req)) {
+  let authenticated = false;
+  try {
+    authenticated = isAuthenticated(req);
+  } catch (error) {
+    res.writeHead(302, {
+      Location: '/staff-login.html?error=' + encodeURIComponent(error.message),
+      'Cache-Control': 'no-store'
+    });
+    res.end();
+    return;
+  }
+
+  if (!authenticated) {
     res.writeHead(302, {
       Location: '/staff-login.html?next=/staff',
       'Cache-Control': 'no-store'
