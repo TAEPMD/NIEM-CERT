@@ -57,25 +57,26 @@ document.addEventListener('DOMContentLoaded', () => {
   loadRenewalDraftIfPresent();
 
   form.addEventListener('input', (event) => {
+    if (event.target.dataset.signerField) return;
     if (event.target.name === 'issueDate' || event.target.name === 'courseId') {
-      applySelectedCourseDefaults(false);
+      refreshPreview({ recalculateExpireDate: event.target.name === 'issueDate' });
+      return;
     }
-    creatorState.current = buildRecordFromForm(false);
-    renderPreview(creatorState.current);
+    refreshPreview();
   });
 
   form.addEventListener('change', (event) => {
-    if (event.target.name === 'courseId') {
-      applySelectedCourseDefaults(true);
-      creatorState.current = buildRecordFromForm(false);
-      renderPreview(creatorState.current);
+    if (event.target.dataset.signerField) return;
+    if (event.target.name === 'courseId' || event.target.name === 'issueDate') {
+      refreshPreview({ recalculateExpireDate: true });
+      return;
     }
+    refreshPreview();
   });
 
   document.getElementById('logoInput').addEventListener('change', async (event) => {
     creatorState.logoDataUrl = await readSelectedImage(event.target.files[0]);
-    creatorState.current = buildRecordFromForm(false);
-    renderPreview(creatorState.current);
+    refreshPreview();
   });
 
   document.getElementById('bulkCsvInput').addEventListener('change', async (event) => {
@@ -93,8 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('addSignerButton').addEventListener('click', () => {
     creatorState.signers.push({ id: makeId(), name: '', title: '', signatureDataUrl: '' });
     renderSignerInputs();
-    creatorState.current = buildRecordFromForm(false);
-    renderPreview(creatorState.current);
+    refreshPreview();
   });
 
   document.getElementById('signerList').addEventListener('input', (event) => {
@@ -103,8 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const signer = getSignerById(event.target.dataset.signerId);
     if (!signer) return;
     signer[field] = event.target.value;
-    creatorState.current = buildRecordFromForm(false);
-    renderPreview(creatorState.current);
+    refreshPreview();
   });
 
   document.getElementById('signerList').addEventListener('change', async (event) => {
@@ -112,8 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const signer = getSignerById(event.target.dataset.signerId);
     if (!signer) return;
     signer.signatureDataUrl = await readSelectedImage(event.target.files[0]);
-    creatorState.current = buildRecordFromForm(false);
-    renderPreview(creatorState.current);
+    refreshPreview();
   });
 
   document.getElementById('signerList').addEventListener('click', (event) => {
@@ -125,8 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
       creatorState.signers = creatorState.signers.filter((signer) => signer.id !== button.dataset.signerId);
     }
     renderSignerInputs();
-    creatorState.current = buildRecordFromForm(false);
-    renderPreview(creatorState.current);
+    refreshPreview();
   });
 
   form.addEventListener('submit', (event) => {
@@ -153,8 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetCertificateForm();
   });
 
-  creatorState.current = buildRecordFromForm(false);
-  renderPreview(creatorState.current);
+  refreshPreview();
 });
 
 async function verifyStaffSession() {
@@ -192,6 +188,7 @@ function buildRecordFromForm(finalize) {
     : existingCertificateNo || getNextCertificateNo(courseCode, issueDate);
   const signers = normalizeSigners(creatorState.signers);
   const primarySigner = signers[0] || { name: '', title: '', signatureDataUrl: '' };
+  const design = buildDesignFromValues(values);
 
   return {
     id: (creatorState.current && creatorState.current.id) || makeId(),
@@ -209,6 +206,7 @@ function buildRecordFromForm(finalize) {
     signerName: primarySigner.name || 'ผู้ลงนาม',
     signerTitle: primarySigner.title || 'ตำแหน่ง',
     note: clean(values.note),
+    design,
     logoDataUrl: creatorState.logoDataUrl || (creatorState.current && creatorState.current.logoDataUrl) || '',
     signatureDataUrl: primarySigner.signatureDataUrl || '',
     renewalOf: (creatorState.current && creatorState.current.renewalOf) || '',
@@ -235,13 +233,28 @@ function renderCourseModule(selectedCourseId) {
   renderSelectedCourseSummary(getSelectedCourse(creatorState.courses), getNextCertificateNoForSelectedCourse());
 }
 
+function refreshPreview(options) {
+  const settings = Object.assign({ recalculateExpireDate: false }, options || {});
+  if (settings.recalculateExpireDate) {
+    applySelectedCourseDefaults(true);
+  } else {
+    renderSelectedCourseSummary(getSelectedCourse(creatorState.courses), getNextCertificateNoForSelectedCourse());
+  }
+  clearBulkPrintPages();
+  creatorState.current = buildRecordFromForm(false);
+  renderPreview(creatorState.current);
+}
+
 function renderPreview(record) {
+  applyCertificateDesign(document.getElementById('certificatePreview'), record.design);
   setText('previewCertNo', record.certificateNo);
   setText('previewCertNoFooter', record.certificateNo);
   setText('previewIssueDate', 'วันที่ออก ' + toThaiDate(record.issueDate));
   setText('previewOrganization', record.organizationName);
   setText('previewTitle', record.certificateTitle);
+  setText('previewLeadText', getDesignValue(record.design, 'leadText'));
   setText('previewRecipient', record.recipientName);
+  setText('previewCompletionText', getDesignValue(record.design, 'completionText'));
   setText('previewCourse', record.courseName);
   setText('previewHours', record.hours ? `จำนวน ${record.hours} ชั่วโมง` : '');
   setText('previewNote', record.note);
@@ -258,15 +271,14 @@ function resetCertificateForm() {
   form.organizationName.value = 'สถาบันการแพทย์ฉุกเฉินแห่งชาติ';
   form.certificateTitle.value = 'ใบประกาศนียบัตร';
   form.issueDate.value = formatDateInput(new Date());
+  resetDesignControls(form);
   document.getElementById('logoInput').value = '';
   creatorState.logoDataUrl = '';
   creatorState.signers = [{ id: makeId(), name: '', title: '', signatureDataUrl: '' }];
   renderSignerInputs();
   if (creatorState.courses[0]) form.courseId.value = creatorState.courses[0].id;
-  applySelectedCourseDefaults(true);
-  creatorState.current = buildRecordFromForm(false);
-  renderPreview(creatorState.current);
   renderCourseModule(form.courseId.value);
+  refreshPreview({ recalculateExpireDate: true });
 }
 
 function applySelectedCourseDefaults(forceExpireDate) {
@@ -316,6 +328,7 @@ function loadRenewalDraftIfPresent() {
   form.issueDate.value = draft.issueDate || formatDateInput(new Date());
   form.expireDate.value = draft.expireDate || '';
   form.note.value = draft.note || '';
+  applyDesignToForm(form, draft.design);
   creatorState.logoDataUrl = draft.logoDataUrl || '';
   creatorState.signers = normalizeSigners(draft.signers || legacySignersFromRecord(draft));
   renderSignerInputs();
@@ -325,10 +338,8 @@ function loadRenewalDraftIfPresent() {
     renewalOf: draft.renewalOf || '',
     previousCertificateNo: draft.previousCertificateNo || ''
   };
-  applySelectedCourseDefaults(!form.expireDate.value);
-  creatorState.current = Object.assign(creatorState.current, buildRecordFromForm(false));
-  renderPreview(creatorState.current);
   renderCourseModule(form.courseId.value);
+  refreshPreview({ recalculateExpireDate: !form.expireDate.value });
   showToast('เตรียมข้อมูลต่ออายุแล้ว กรุณาตรวจสอบและกดสร้างใบประกาศ');
 }
 
@@ -446,7 +457,7 @@ function escapeText(value) {
 function renderBulkPrintPages(records) {
   const container = document.getElementById('bulkPrintPages');
   container.innerHTML = records.map((record) => `
-    <article class="certificate-page">
+    <article class="certificate-page" style="${getCertificateStyleAttr(record.design)}">
       <div class="certificate-border">
         <div class="certificate-topline">
           <span>${escapeText(record.certificateNo)}</span>
@@ -456,9 +467,9 @@ function renderBulkPrintPages(records) {
           ${record.logoDataUrl ? `<img class="certificate-logo" src="${record.logoDataUrl}" alt="">` : ''}
           <p class="certificate-org">${escapeText(record.organizationName)}</p>
           <h2>${escapeText(record.certificateTitle)}</h2>
-          <p class="certificate-lead">ขอมอบใบประกาศฉบับนี้ให้แก่</p>
+          <p class="certificate-lead">${escapeText(getDesignValue(record.design, 'leadText'))}</p>
           <h3>${escapeText(record.recipientName)}</h3>
-          <p class="certificate-copy">เพื่อแสดงว่าได้ผ่านการเข้าร่วม / สำเร็จหลักสูตร</p>
+          <p class="certificate-copy">${escapeText(getDesignValue(record.design, 'completionText'))}</p>
           <h4>${escapeText(record.courseName)}</h4>
           <p class="certificate-meta">${record.hours ? `จำนวน ${escapeText(record.hours)} ชั่วโมง` : ''}</p>
           <p class="certificate-note">${escapeText(record.note)}</p>
@@ -555,4 +566,79 @@ function getSignerById(id) {
 
 function escapeAttr(value) {
   return escapeText(value).replace(/`/g, '&#096;');
+}
+
+function buildDesignFromValues(values) {
+  return {
+    primaryColor: normalizeColor(values.primaryColor, '#0d3b78'),
+    accentColor: normalizeColor(values.accentColor, '#0fafa3'),
+    borderColor: normalizeColor(values.borderColor, '#0d3b78'),
+    borderStyle: ['double', 'solid', 'dashed'].includes(values.borderStyle) ? values.borderStyle : 'double',
+    fontScale: clampNumber(values.fontScale, 85, 115, 100),
+    logoSize: clampNumber(values.logoSize, 56, 140, 92),
+    leadText: clean(values.leadText) || 'ขอมอบใบประกาศฉบับนี้ให้แก่',
+    completionText: clean(values.completionText) || 'เพื่อแสดงว่าได้ผ่านการเข้าร่วม / สำเร็จหลักสูตร'
+  };
+}
+
+function applyCertificateDesign(element, design) {
+  if (!element) return;
+  element.style.setProperty('--cert-primary', getDesignValue(design, 'primaryColor'));
+  element.style.setProperty('--cert-accent', getDesignValue(design, 'accentColor'));
+  element.style.setProperty('--cert-border-color', getDesignValue(design, 'borderColor'));
+  element.style.setProperty('--cert-border-style', getDesignValue(design, 'borderStyle'));
+  element.style.setProperty('--cert-font-scale', String(getDesignValue(design, 'fontScale') / 100));
+  element.style.setProperty('--cert-logo-size', getDesignValue(design, 'logoSize') + 'px');
+}
+
+function getCertificateStyleAttr(design) {
+  return [
+    `--cert-primary:${escapeText(getDesignValue(design, 'primaryColor'))}`,
+    `--cert-accent:${escapeText(getDesignValue(design, 'accentColor'))}`,
+    `--cert-border-color:${escapeText(getDesignValue(design, 'borderColor'))}`,
+    `--cert-border-style:${escapeText(getDesignValue(design, 'borderStyle'))}`,
+    `--cert-font-scale:${getDesignValue(design, 'fontScale') / 100}`,
+    `--cert-logo-size:${getDesignValue(design, 'logoSize')}px`
+  ].join(';');
+}
+
+function getDesignValue(design, key) {
+  const defaults = {
+    primaryColor: '#0d3b78',
+    accentColor: '#0fafa3',
+    borderColor: '#0d3b78',
+    borderStyle: 'double',
+    fontScale: 100,
+    logoSize: 92,
+    leadText: 'ขอมอบใบประกาศฉบับนี้ให้แก่',
+    completionText: 'เพื่อแสดงว่าได้ผ่านการเข้าร่วม / สำเร็จหลักสูตร'
+  };
+  return design && design[key] ? design[key] : defaults[key];
+}
+
+function applyDesignToForm(form, design) {
+  if (!design) return;
+  form.elements.primaryColor.value = getDesignValue(design, 'primaryColor');
+  form.elements.accentColor.value = getDesignValue(design, 'accentColor');
+  form.elements.borderColor.value = getDesignValue(design, 'borderColor');
+  form.elements.borderStyle.value = getDesignValue(design, 'borderStyle');
+  form.elements.fontScale.value = getDesignValue(design, 'fontScale');
+  form.elements.logoSize.value = getDesignValue(design, 'logoSize');
+  form.elements.leadText.value = getDesignValue(design, 'leadText');
+  form.elements.completionText.value = getDesignValue(design, 'completionText');
+}
+
+function resetDesignControls(form) {
+  applyDesignToForm(form, {});
+}
+
+function normalizeColor(value, fallback) {
+  const color = String(value || '');
+  return /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback;
+}
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, number));
 }

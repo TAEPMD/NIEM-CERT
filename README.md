@@ -89,6 +89,7 @@ The creator page supports:
 
 - Certificate form
 - Realtime A4 landscape preview while editing certificate data
+- Flexible certificate design controls: main color, recipient color, border color, border style, font scale, logo size, and certificate text
 - Logo image upload for the certificate
 - Multiple signers, each with signer name, signer title, and digital signature image
 - Auto certificate number format: `CERT-COURSECODE-BEYEAR-0001`

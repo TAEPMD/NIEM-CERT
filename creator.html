@@ -73,6 +73,59 @@
               </label>
             </div>
 
+            <section class="design-panel">
+              <div class="section-heading tight">
+                <h2>ปรับแบบใบประกาศ</h2>
+              </div>
+
+              <div class="form-grid">
+                <label>
+                  สีหัวข้อ/หน่วยงาน
+                  <input name="primaryColor" type="color" value="#0d3b78">
+                </label>
+                <label>
+                  สีชื่อผู้รับ
+                  <input name="accentColor" type="color" value="#0fafa3">
+                </label>
+              </div>
+
+              <div class="form-grid">
+                <label>
+                  สีกรอบ
+                  <input name="borderColor" type="color" value="#0d3b78">
+                </label>
+                <label>
+                  รูปแบบกรอบ
+                  <select name="borderStyle">
+                    <option value="double">สองชั้น</option>
+                    <option value="solid">เส้นเดียว</option>
+                    <option value="dashed">เส้นประ</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="form-grid">
+                <label>
+                  ขนาดตัวอักษร
+                  <input name="fontScale" type="range" min="85" max="115" step="5" value="100">
+                </label>
+                <label>
+                  ขนาดโลโก้
+                  <input name="logoSize" type="range" min="56" max="140" step="4" value="92">
+                </label>
+              </div>
+
+              <label>
+                ข้อความนำ
+                <input name="leadText" type="text" value="ขอมอบใบประกาศฉบับนี้ให้แก่">
+              </label>
+
+              <label>
+                ข้อความรับรอง
+                <input name="completionText" type="text" value="เพื่อแสดงว่าได้ผ่านการเข้าร่วม / สำเร็จหลักสูตร">
+              </label>
+            </section>
+
             <section class="signers-panel">
               <div class="section-heading tight">
                 <h2>ผู้ลงนาม</h2>
@@ -123,9 +176,9 @@
                 <img class="certificate-logo" id="previewLogo" alt="" hidden>
                 <p class="certificate-org" id="previewOrganization">สถาบันการแพทย์ฉุกเฉินแห่งชาติ</p>
                 <h2 id="previewTitle">ใบประกาศนียบัตร</h2>
-                <p class="certificate-lead">ขอมอบใบประกาศฉบับนี้ให้แก่</p>
+                <p class="certificate-lead" id="previewLeadText">ขอมอบใบประกาศฉบับนี้ให้แก่</p>
                 <h3 id="previewRecipient">ชื่อผู้รับใบประกาศ</h3>
-                <p class="certificate-copy">เพื่อแสดงว่าได้ผ่านการเข้าร่วม / สำเร็จหลักสูตร</p>
+                <p class="certificate-copy" id="previewCompletionText">เพื่อแสดงว่าได้ผ่านการเข้าร่วม / สำเร็จหลักสูตร</p>
                 <h4 id="previewCourse">ชื่อหลักสูตรหรือกิจกรรม</h4>
                 <p class="certificate-meta" id="previewHours">จำนวน 6 ชั่วโมง</p>
                 <p class="certificate-note" id="previewNote"></p>
